@@ -1,6 +1,6 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
-const { createSampleDatabase } = require("./sample-data");
+const { createEmptyDatabase } = require("./empty-data");
 const { ensurePrismaDatabase, readPrismaDatabase, replacePrismaDatabase } = require("./prisma-driver");
 
 const ROOT_DIR = path.resolve(__dirname, "..", "..", "..");
@@ -34,8 +34,7 @@ async function ensureDatabase() {
   try {
     await fs.access(DB_FILE);
   } catch {
-    const sample = createSampleDatabase();
-    await writeDatabase(sample);
+    await writeDatabase(createEmptyDatabase());
   }
 }
 

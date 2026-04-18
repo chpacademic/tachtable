@@ -3,8 +3,8 @@
 @source "./*.{html,js}";
 
 @theme {
-  --font-sans: "IBM Plex Sans Thai", "Segoe UI", sans-serif;
-  --font-display: "Noto Serif Thai", "Georgia", serif;
+  --font-sans: "Sarabun", sans-serif;
+  --font-display: "Prompt", sans-serif;
   --color-brand-primary: #187498;
   --color-brand-secondary: #36AE7C;
   --color-brand-accent: #E36488;

@@ -26,10 +26,10 @@ const {
 const {
   buildActivityPayload,
   buildBootstrapPayload,
+  buildCsvPayload,
   buildPdfPayload,
-  getCurrentTimetable,
-  getEntriesForView,
   getGroupSuggestions,
+  listEntitiesForView,
 } = require("./apps/api/runtime/selectors");
 const {
   CSV_OUTPUT_DIR,
@@ -160,10 +160,30 @@ async function serveStatic(req, res, pathname) {
   }
 }
 
-function normalizeView(searchParams, db) {
+function parseEntityIds(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeExportOptions(searchParams, db) {
   const view = searchParams.get("view") === "teacher" ? "teacher" : "section";
-  const entityId = searchParams.get("entityId") || (view === "teacher" ? db.teachers[0]?.id : db.sections[0]?.id);
-  return { view, entityId };
+  const scope = searchParams.get("scope") === "all"
+    ? "all"
+    : searchParams.get("scope") === "selected"
+      ? "selected"
+      : "current";
+  const available = listEntitiesForView(db, view);
+  const fallbackId = available[0]?.id || "";
+  const entityId = searchParams.get("entityId") || fallbackId;
+  const entityIds = parseEntityIds(searchParams.get("entityIds"));
+  return {
+    view,
+    scope,
+    entityId,
+    entityIds,
+  };
 }
 
 function getActorFromRequest(req, providedDisplayName = "") {
@@ -175,15 +195,16 @@ function getActorFromRequest(req, providedDisplayName = "") {
 }
 
 async function handlePdfExport(res, db, searchParams) {
-  const options = normalizeView(searchParams, db);
+  const options = normalizeExportOptions(searchParams, db);
   const payload = buildPdfPayload(db, options);
+  const scopeSuffix = options.scope === "all" ? "all" : options.scope === "selected" ? "selected" : options.entityId;
   const stamp = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
-  const outputPath = path.join(PDF_OUTPUT_DIR, `teachtable-${options.view}-${options.entityId}-${stamp}.pdf`);
+  const outputPath = path.join(PDF_OUTPUT_DIR, `teachtable-${options.view}-${scopeSuffix}-${stamp}.pdf`);
   const buffer = Buffer.from(await generateTimetablePdfBuffer(payload));
   await fs.writeFile(outputPath, buffer);
   res.writeHead(200, {
     "Content-Type": "application/pdf",
-    "Content-Disposition": `attachment; filename="teachtable-${options.view}.pdf"`,
+    "Content-Disposition": `attachment; filename="teachtable-${options.view}-${scopeSuffix}.pdf"`,
     "Content-Length": buffer.length,
   });
   res.end(buffer);
@@ -379,17 +400,14 @@ async function handleApi(req, res, url) {
 
   if (pathname === "/api/exports/timetable.csv" && req.method === "GET") {
     const db = await readDatabase();
-    const options = normalizeView(url.searchParams, db);
-    const csv = buildTimetableCsv({
-      entries: getEntriesForView(db, options.view, options.entityId),
-      sections: db.sections,
-      subjects: db.subjects,
-      teachers: db.teachers,
-      rooms: db.rooms,
-    });
-    const csvPath = path.join(CSV_OUTPUT_DIR, `teachtable-${options.view}-${options.entityId}.csv`);
+    const options = normalizeExportOptions(url.searchParams, db);
+    const csv = buildTimetableCsv(buildCsvPayload(db, options));
+    const scopeSuffix = options.scope === "all" ? "all" : options.scope === "selected" ? "selected" : options.entityId;
+    const csvPath = path.join(CSV_OUTPUT_DIR, `teachtable-${options.view}-${scopeSuffix}.csv`);
     await fs.writeFile(csvPath, csv, "utf8");
-    sendText(res, 200, csv, "text/csv; charset=utf-8");
+    sendText(res, 200, csv, "text/csv; charset=utf-8", {
+      "Content-Disposition": `attachment; filename="teachtable-${options.view}-${scopeSuffix}.csv"`,
+    });
     return;
   }
 

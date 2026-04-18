@@ -1,4 +1,4 @@
-const { createSampleDatabase } = require("./sample-data");
+const { createEmptyDatabase } = require("./empty-data");
 
 let prismaClient;
 
@@ -308,7 +308,7 @@ async function readPrismaDatabase() {
           createdAt: toIso(setting.createdAt),
           updatedAt: toIso(setting.updatedAt),
         }
-      : createSampleDatabase().settings,
+      : createEmptyDatabase().settings,
     teachers: teachers.map((item) => ({
       id: item.id,
       teacherCode: item.teacherCode,
@@ -425,7 +425,7 @@ async function ensurePrismaDatabase() {
   await prisma.$connect();
   const count = await prisma.schoolSetting.count();
   if (count === 0) {
-    await replacePrismaDatabase(createSampleDatabase());
+    await replacePrismaDatabase(createEmptyDatabase());
   }
 }
 

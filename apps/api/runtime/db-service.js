@@ -23,7 +23,43 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function parseGradeValue(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.trunc(value) : Number.NaN;
+  }
+
+  const text = trimString(value);
+  if (!text) {
+    return Number.NaN;
+  }
+
+  const digits = text.match(/\d+/);
+  if (!digits) {
+    return Number.NaN;
+  }
+
+  return Number(digits[0]);
+}
+
 function ensureRequired(value, label) {
+  if (value === null || value === undefined) {
+    throw new Error(`กรุณาระบุ ${label}`);
+  }
+
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      throw new Error(`กรุณาระบุ ${label}`);
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      throw new Error(`กรุณาระบุ ${label}`);
+    }
+    return;
+  }
+
   if (!trimString(value)) {
     throw new Error(`กรุณาระบุ ${label}`);
   }
@@ -41,6 +77,11 @@ function ensureRefExists(collection, id, label) {
   if (id && !collection.some((item) => item.id === id)) {
     throw new Error(`ไม่พบ ${label} ที่เลือก`);
   }
+}
+
+function ensureRequiredRef(collection, id, label) {
+  ensureRequired(id, label);
+  ensureRefExists(collection, id, label);
 }
 
 function normalizeTeacher(db, payload, currentId) {
@@ -74,16 +115,29 @@ function normalizeRoom(db, payload, currentId) {
 }
 
 function normalizeSubject(db, payload, currentId) {
-  ensureRequired(payload.subjectCode, "รหัสวิชา");
+  const subjectKind = trimString(payload.subjectKind) || "ACADEMIC";
+  const subjectType = trimString(payload.subjectType);
+  const activityCategory = trimString(payload.activityCategory);
+
   ensureRequired(payload.name, "ชื่อวิชา");
-  ensureUnique(db.subjects, "subjectCode", payload.subjectCode, "รหัสวิชา", currentId);
+  if (subjectKind === "DEVELOPMENT_ACTIVITY") {
+    ensureRequired(activityCategory, "ประเภทกิจกรรมพัฒนาผู้เรียน");
+  } else {
+    ensureRequired(payload.subjectCode, "รหัสวิชา");
+    ensureRequired(payload.learningArea, "กลุ่มสาระการเรียนรู้");
+    ensureRequired(subjectType, "ประเภทรายวิชา");
+    ensureUnique(db.subjects, "subjectCode", payload.subjectCode, "รหัสวิชา", currentId);
+  }
   return {
     id: currentId || createId("subject"),
-    subjectCode: trimString(payload.subjectCode),
+    subjectCode: subjectKind === "DEVELOPMENT_ACTIVITY" ? "" : trimString(payload.subjectCode),
     name: trimString(payload.name),
     credits: Math.max(0, toNumber(payload.credits, 1)),
     weeklyPeriods: Math.max(1, toNumber(payload.weeklyPeriods, 1)),
-    learningArea: trimString(payload.learningArea),
+    learningArea: subjectKind === "DEVELOPMENT_ACTIVITY" ? "กิจกรรมพัฒนาผู้เรียน" : trimString(payload.learningArea),
+    subjectKind,
+    subjectType: subjectKind === "DEVELOPMENT_ACTIVITY" ? "DEVELOPMENT_ACTIVITY" : subjectType,
+    activityCategory,
     educationLevels: (Array.isArray(payload.educationLevels) ? payload.educationLevels : []).filter((level) =>
       EDUCATION_LEVELS.includes(level),
     ),
@@ -109,18 +163,44 @@ function normalizeSection(db, payload, currentId) {
   };
 }
 
+function normalizeSectionSafe(db, payload, currentId) {
+  if (!EDUCATION_LEVELS.includes(payload.educationLevel)) {
+    throw new Error("ระดับการศึกษาไม่ถูกต้อง");
+  }
+
+  ensureRequired(payload.grade, "ชั้นปี");
+  const normalizedGrade = parseGradeValue(payload.grade);
+  if (!Number.isFinite(normalizedGrade) || normalizedGrade < 1) {
+    throw new Error("กรุณาระบุ ชั้นปี");
+  }
+
+  ensureRequired(payload.roomName, "ห้องเรียน");
+  ensureRefExists(db.teachers, payload.homeroomTeacherId, "ครูประจำชั้น");
+
+  return {
+    id: currentId || createId("section"),
+    educationLevel: payload.educationLevel,
+    academicYear: trimString(payload.academicYear) || db.settings.academicYear,
+    term: trimString(payload.term) || db.settings.term,
+    grade: normalizedGrade,
+    roomName: trimString(payload.roomName),
+    plannedPeriodsPerWeek: Math.max(1, toNumber(payload.plannedPeriodsPerWeek, 30)),
+    homeroomTeacherId: payload.homeroomTeacherId || "",
+  };
+}
+
 function normalizeEnrollment(db, payload, currentId) {
-  ensureRefExists(db.sections, payload.sectionId, "ชั้นเรียน");
-  ensureRefExists(db.subjects, payload.subjectId, "รายวิชา");
-  ensureRefExists(db.teachers, payload.leadTeacherId, "ครูผู้สอน");
-  ensureRefExists(db.rooms, payload.preferredRoomId, "ห้องเรียน");
+  ensureRequiredRef(db.sections, payload.sectionId, "ชั้นเรียน");
+  ensureRequiredRef(db.subjects, payload.subjectId, "รายวิชา");
+  ensureRequiredRef(db.teachers, payload.leadTeacherId, "ครูผู้สอนหลัก");
+  ensureRequiredRef(db.rooms, payload.preferredRoomId, "ห้อง/สถานที่หลัก");
   return {
     id: currentId || createId("enroll"),
     sectionId: payload.sectionId,
     subjectId: payload.subjectId,
-    leadTeacherId: payload.leadTeacherId || "",
+    leadTeacherId: payload.leadTeacherId,
     requiredPeriodsPerWeek: Math.max(1, toNumber(payload.requiredPeriodsPerWeek, 1)),
-    preferredRoomId: payload.preferredRoomId || "",
+    preferredRoomId: payload.preferredRoomId,
     notes: trimString(payload.notes),
   };
 }
@@ -129,14 +209,14 @@ function normalizeInstructionalGroup(db, payload, currentId) {
   if (!DELIVERY_MODES.includes(payload.deliveryMode)) {
     throw new Error("รูปแบบการสอนไม่ถูกต้อง");
   }
-  ensureRefExists(db.enrollments, payload.enrollmentId, "การลงทะเบียนรายวิชา");
+  ensureRequiredRef(db.enrollments, payload.enrollmentId, "แผนรายวิชา");
   ensureRequired(payload.groupCode, "รหัสกลุ่ม");
   ensureRequired(payload.displayName, "ชื่อกลุ่ม");
   ensureRequired(payload.studentGroupKey, "student group key");
-  ensureRefExists(db.rooms, payload.preferredRoomId, "ห้องเรียน");
+  ensureRequiredRef(db.rooms, payload.preferredRoomId, "ห้อง/สถานที่หลัก");
 
   const teachers = (Array.isArray(payload.teachers) ? payload.teachers : []).map((assignment) => {
-    ensureRefExists(db.teachers, assignment.teacherId, "ครูผู้สอน");
+    ensureRequiredRef(db.teachers, assignment.teacherId, "ครูผู้สอน");
     if (!TEACHING_ROLES.includes(assignment.teachingRole)) {
       throw new Error("บทบาทครูไม่ถูกต้อง");
     }
@@ -149,6 +229,10 @@ function normalizeInstructionalGroup(db, payload, currentId) {
     };
   });
 
+  if (!teachers.length) {
+    throw new Error("กรุณากำหนดครูผู้สอนอย่างน้อย 1 คน");
+  }
+
   const groupId = currentId || createId("group");
   return {
     id: groupId,
@@ -158,7 +242,7 @@ function normalizeInstructionalGroup(db, payload, currentId) {
     deliveryMode: payload.deliveryMode,
     studentGroupKey: trimString(payload.studentGroupKey),
     requiredPeriodsPerWeek: Math.max(1, toNumber(payload.requiredPeriodsPerWeek, 1)),
-    preferredRoomId: payload.preferredRoomId || "",
+    preferredRoomId: payload.preferredRoomId,
     teachers: teachers.map((assignment) => ({ ...assignment, instructionalGroupId: groupId })),
   };
 }
@@ -175,6 +259,7 @@ function normalizeSettings(db, payload) {
     signatories: signatories.map((item) => ({
       title: trimString(item.title),
       name: trimString(item.name),
+      signatureImage: trimString(item.signatureImage),
     })),
     updatedAt: new Date().toISOString(),
   };
@@ -261,7 +346,7 @@ function normalizeByResource(db, resource, payload, currentId) {
     case "subjects":
       return normalizeSubject(db, payload, currentId);
     case "sections":
-      return normalizeSection(db, payload, currentId);
+      return normalizeSectionSafe(db, payload, currentId);
     case "enrollments":
       return normalizeEnrollment(db, payload, currentId);
     case "instructionalGroups":

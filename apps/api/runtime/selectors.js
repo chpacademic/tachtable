@@ -7,9 +7,10 @@ const {
   PERIODS_PER_DAY,
 } = require("./constants");
 const { validateTimetable, findSuggestedSlots } = require("./conflict-engine");
+const { createEmptyDatabase } = require("./empty-data");
 
 function getCurrentTimetable(db) {
-  return db.timetables[0];
+  return db.timetables[0] || createEmptyDatabase().timetables[0];
 }
 
 function buildDataset(db, timetable = getCurrentTimetable(db)) {
@@ -51,8 +52,7 @@ function hashColor(value) {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function decorateEntry(entry, db) {
-  const maps = buildMaps(db);
+function decorateEntry(entry, db, maps = buildMaps(db)) {
   const subject = maps.subjectMap.get(entry.subjectId);
   const room = maps.roomMap.get(entry.roomId);
   const section = maps.sectionMap.get(entry.sectionId);
@@ -81,8 +81,7 @@ function decorateEntry(entry, db) {
   };
 }
 
-function buildTeacherLoads(db) {
-  const dataset = buildDataset(db);
+function buildTeacherLoads(db, dataset = buildDataset(db), maps = buildMaps(db)) {
   const teacherLoadMap = new Map(db.teachers.map((teacher) => [teacher.id, 0]));
   const teachingGroupsMap = new Map(db.teachers.map((teacher) => [teacher.id, new Set()]));
 
@@ -99,16 +98,14 @@ function buildTeacherLoads(db) {
     current: Number((teacherLoadMap.get(teacher.id) || 0).toFixed(2)),
     max: teacher.maxPeriodsPerWeek,
     subjectNames: teacher.subjectIds
-      .map((subjectId) => db.subjects.find((subject) => subject.id === subjectId)?.name)
+      .map((subjectId) => maps.subjectMap.get(subjectId)?.name)
       .filter(Boolean),
     assignedGroups: teachingGroupsMap.get(teacher.id)?.size || 0,
   }));
 }
 
-function buildUnresolvedGroups(db) {
-  const dataset = buildDataset(db);
+function buildUnresolvedGroups(db, dataset = buildDataset(db), maps = buildMaps(db)) {
   const slotUsage = new Map();
-  const maps = buildMaps(db);
 
   for (const entry of dataset.entries) {
     const slots = slotUsage.get(entry.instructionalGroupId) || new Set();
@@ -141,9 +138,7 @@ function buildUnresolvedGroups(db) {
     .sort((left, right) => right.remainingPeriods - left.remainingPeriods || left.sectionName.localeCompare(right.sectionName));
 }
 
-function buildSectionStatuses(db) {
-  const dataset = buildDataset(db);
-  const validation = validateTimetable(dataset);
+function buildSectionStatuses(db, dataset = buildDataset(db), validation = validateTimetable(dataset)) {
   const sectionSlotUsage = new Map();
 
   for (const entry of dataset.entries) {
@@ -169,10 +164,7 @@ function buildSectionStatuses(db) {
   });
 }
 
-function buildDashboardSummary(db) {
-  const dataset = buildDataset(db);
-  const validation = validateTimetable(dataset);
-
+function buildDashboardSummary(db, dataset = buildDataset(db), validation = validateTimetable(dataset)) {
   return {
     teachers: db.teachers.length,
     rooms: db.rooms.length,
@@ -189,16 +181,59 @@ function buildDashboardSummary(db) {
   };
 }
 
-function getEntriesForView(db, view, entityId) {
-  const dataset = buildDataset(db);
+function getEntriesForView(db, view, entityId, dataset = buildDataset(db)) {
+  if (!entityId) {
+    return [];
+  }
+
   if (view === "teacher") {
     return dataset.entries.filter((entry) => entry.teachers.some((teacher) => teacher.teacherId === entityId));
   }
   return dataset.entries.filter((entry) => entry.sectionId === entityId);
 }
 
-function buildTimetableMatrix(db, options) {
-  const entries = getEntriesForView(db, options.view, options.entityId);
+function listEntitiesForView(db, view) {
+  if (view === "teacher") {
+    return db.teachers.map((teacher) => ({
+      id: teacher.id,
+      label: teacher.fullName,
+      educationLevelLabel: "ตารางครูผู้สอน",
+    }));
+  }
+
+  return db.sections.map((section) => ({
+    id: section.id,
+    label: sectionLabel(section),
+    educationLevelLabel: EDUCATION_LEVEL_LABELS[section.educationLevel] || section.educationLevel || "-",
+  }));
+}
+
+function resolveEntityIdsForView(db, options = {}) {
+  const view = options.view === "teacher" ? "teacher" : "section";
+  const entities = listEntitiesForView(db, view);
+  const validIds = new Set(entities.map((item) => item.id));
+  const fallbackId = validIds.has(options.entityId) ? options.entityId : entities[0]?.id || "";
+  const requestedIds = Array.isArray(options.entityIds) ? options.entityIds : [];
+
+  let entityIds = [];
+  if (options.scope === "all") {
+    entityIds = entities.map((item) => item.id);
+  } else if (options.scope === "selected") {
+    entityIds = requestedIds.filter((id) => validIds.has(id));
+  } else if (fallbackId) {
+    entityIds = [fallbackId];
+  }
+
+  const deduped = [...new Set(entityIds)];
+  if (deduped.length > 0) {
+    return deduped;
+  }
+
+  return fallbackId ? [fallbackId] : [];
+}
+
+function buildTimetableMatrix(db, options, dataset = buildDataset(db), maps = buildMaps(db)) {
+  const entries = getEntriesForView(db, options.view, options.entityId, dataset);
   const matrix = Array.from({ length: PERIODS_PER_DAY }, () =>
     Array.from({ length: WEEKDAYS.length }, () => []),
   );
@@ -208,7 +243,7 @@ function buildTimetableMatrix(db, options) {
     if (dayIndex === -1) {
       continue;
     }
-    matrix[entry.period - 1][dayIndex].push(decorateEntry(entry, db));
+    matrix[entry.period - 1][dayIndex].push(decorateEntry(entry, db, maps));
   }
 
   for (const periodRows of matrix) {
@@ -220,8 +255,8 @@ function buildTimetableMatrix(db, options) {
   return matrix;
 }
 
-function buildPrintableMatrix(db, options) {
-  const matrix = buildTimetableMatrix(db, options);
+function buildPrintableMatrix(db, options, dataset = buildDataset(db), maps = buildMaps(db)) {
+  const matrix = buildTimetableMatrix(db, options, dataset, maps);
   return matrix.map((periodRow) =>
     periodRow.map((entries) => {
       if (entries.length === 0) {
@@ -239,8 +274,7 @@ function buildPrintableMatrix(db, options) {
   );
 }
 
-function buildActivityPayload(db) {
-  const timetable = getCurrentTimetable(db);
+function buildActivityPayload(db, timetable = getCurrentTimetable(db)) {
   return {
     version: timetable.version,
     activeUsers: db.collaboration.presences.map((presence) => ({
@@ -276,6 +310,7 @@ function buildActivityPayload(db) {
 function buildBootstrapPayload(db) {
   const timetable = getCurrentTimetable(db);
   const dataset = buildDataset(db, timetable);
+  const maps = buildMaps(db);
   const validation = validateTimetable(dataset);
 
   return {
@@ -287,12 +322,12 @@ function buildBootstrapPayload(db) {
     enrollments: db.enrollments,
     instructionalGroups: db.instructionalGroups,
     timetable,
-    dashboard: buildDashboardSummary(db),
+    dashboard: buildDashboardSummary(db, dataset, validation),
     validation,
-    teacherLoads: buildTeacherLoads(db),
-    sectionStatuses: buildSectionStatuses(db),
-    unresolvedGroups: buildUnresolvedGroups(db),
-    activity: buildActivityPayload(db),
+    teacherLoads: buildTeacherLoads(db, dataset, maps),
+    sectionStatuses: buildSectionStatuses(db, dataset, validation),
+    unresolvedGroups: buildUnresolvedGroups(db, dataset, maps),
+    activity: buildActivityPayload(db, timetable),
   };
 }
 
@@ -335,32 +370,57 @@ function resolveDefaultRoomId(db, groupId) {
   return matchingRoom?.id || db.rooms[0]?.id;
 }
 
-function buildPdfPayload(db, options) {
+function buildExportReports(db, options = {}) {
   const maps = buildMaps(db);
-  const isTeacherView = options.view === "teacher";
-  const entity = isTeacherView ? maps.teacherMap.get(options.entityId) : maps.sectionMap.get(options.entityId);
-  const levelLabel = isTeacherView
-    ? "ตารางครูผู้สอน"
-    : entity
-      ? EDUCATION_LEVEL_LABELS[entity.educationLevel] || entity.educationLevel
-      : "-";
-  const entityLabel = isTeacherView
-    ? entity?.fullName || options.entityId
-    : entity
-      ? sectionLabel(entity)
-      : options.entityId;
+  const dataset = buildDataset(db);
+  const view = options.view === "teacher" ? "teacher" : "section";
+  const isTeacherView = view === "teacher";
+  const entityIds = resolveEntityIdsForView(db, {
+    view,
+    scope: options.scope,
+    entityId: options.entityId,
+    entityIds: options.entityIds,
+  });
 
+  return entityIds.map((entityId) => {
+    const entity = isTeacherView ? maps.teacherMap.get(entityId) : maps.sectionMap.get(entityId);
+    return {
+      view,
+      entityId,
+      entityLabel: isTeacherView ? entity?.fullName || entityId : entity ? sectionLabel(entity) : entityId,
+      report_title: isTeacherView ? "ตารางสอนรายครู" : "ตารางเรียนประจำภาคเรียน",
+      education_level: isTeacherView
+        ? "ตารางครูผู้สอน"
+        : entity
+          ? EDUCATION_LEVEL_LABELS[entity.educationLevel] || entity.educationLevel
+          : "-",
+      section_name: isTeacherView ? entity?.fullName || entityId : entity ? sectionLabel(entity) : entityId,
+      matrix: buildPrintableMatrix(db, { view, entityId }, dataset, maps),
+      entries: getEntriesForView(db, view, entityId, dataset),
+    };
+  });
+}
+
+function buildCsvPayload(db, options = {}) {
+  return {
+    view: options.view === "teacher" ? "teacher" : "section",
+    reports: buildExportReports(db, options),
+    sections: db.sections,
+    subjects: db.subjects,
+    teachers: db.teachers,
+    rooms: db.rooms,
+  };
+}
+
+function buildPdfPayload(db, options = {}) {
   return {
     school_name: db.settings.schoolName,
-    report_title: isTeacherView ? "ตารางสอนรายครู" : "ตารางเรียนประจำภาคเรียน",
-    education_level: levelLabel,
-    section_name: entityLabel,
     term: db.settings.term,
     academic_year: db.settings.academicYear,
     printed_at: new Date().toLocaleString("th-TH"),
     logo_path: db.settings.logoPath || "",
-    matrix: buildPrintableMatrix(db, options),
     signatories: db.settings.signatories,
+    reports: buildExportReports(db, options),
   };
 }
 
@@ -379,6 +439,10 @@ module.exports = {
   buildBootstrapPayload,
   getGroupSuggestions,
   resolveDefaultRoomId,
+  buildExportReports,
+  buildCsvPayload,
   buildPdfPayload,
   getEntriesForView,
+  listEntitiesForView,
+  resolveEntityIdsForView,
 };

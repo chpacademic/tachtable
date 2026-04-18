@@ -8,13 +8,30 @@ export function configureApi(options = {}) {
   unauthorizedHandler = typeof options.onUnauthorized === "function" ? options.onUnauthorized : () => undefined;
 }
 
-async function request(path, options = {}) {
-  const headers = new Headers(options.headers || {});
+async function buildAuthorizedHeaders(headers = {}) {
+  const nextHeaders = new Headers(headers);
   const token = await tokenProvider();
 
   if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+    nextHeaders.set("Authorization", `Bearer ${token}`);
   }
+
+  return nextHeaders;
+}
+
+async function parseErrorPayload(response) {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes(JSON_CONTENT_TYPE)) {
+    const payload = await response.json().catch(() => null);
+    return payload?.message || "";
+  }
+
+  return response.text().catch(() => "");
+}
+
+async function request(path, options = {}) {
+  const headers = await buildAuthorizedHeaders(options.headers || {});
 
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", JSON_CONTENT_TYPE);
@@ -41,6 +58,106 @@ async function request(path, options = {}) {
   }
 
   return payload;
+}
+
+async function requestBlob(path, options = {}) {
+  const headers = await buildAuthorizedHeaders(options.headers || {});
+  const response = await fetch(path, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 401) {
+    unauthorizedHandler();
+    const message = await parseErrorPayload(response);
+    throw new Error(message || "กรุณาเข้าสู่ระบบก่อนใช้งาน TeachTable");
+  }
+
+  if (!response.ok) {
+    const message = await parseErrorPayload(response);
+    throw new Error(message || "ไม่สามารถส่งออกเอกสารได้");
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: resolveFilename(response.headers.get("content-disposition")),
+    contentType: response.headers.get("content-type") || "",
+  };
+}
+
+function resolveFilename(contentDisposition = "") {
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match) {
+    return decodeURIComponent(utf8Match[1]);
+  }
+
+  const plainMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+  return plainMatch ? plainMatch[1] : "";
+}
+
+function buildQuery(params = {}) {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      if (value.length > 0) {
+        searchParams.set(key, value.join(","));
+      }
+      return;
+    }
+
+    if (value !== undefined && value !== null && value !== "") {
+      searchParams.set(key, value);
+    }
+  });
+
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
+function triggerBlobDownload(blob, filename) {
+  const blobUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename || "teachtable-export";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+}
+
+function openPrintFrame(blob, filename = "teachtable-print.pdf") {
+  const blobUrl = window.URL.createObjectURL(blob);
+  const frame = document.createElement("iframe");
+  frame.className = "print-frame";
+  frame.title = filename;
+  frame.src = blobUrl;
+  frame.style.position = "fixed";
+  frame.style.right = "0";
+  frame.style.bottom = "0";
+  frame.style.width = "0";
+  frame.style.height = "0";
+  frame.style.border = "0";
+  document.body.appendChild(frame);
+
+  const cleanup = () => {
+    window.setTimeout(() => {
+      frame.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    }, 10000);
+  };
+
+  frame.onload = () => {
+    try {
+      frame.contentWindow?.focus();
+      frame.contentWindow?.print();
+    } catch {
+      const fallback = window.open(blobUrl, "_blank", "noopener");
+      fallback?.focus();
+    } finally {
+      cleanup();
+    }
+  };
 }
 
 export function getBootstrap() {
@@ -98,6 +215,10 @@ export function heartbeat(payload) {
   });
 }
 
+export function getActivity() {
+  return request("/api/timetables/current/activity");
+}
+
 export function claimLock(payload) {
   return request("/api/timetables/current/collaboration/locks", {
     method: "POST",
@@ -118,10 +239,17 @@ export function applyMutation(payload) {
   });
 }
 
-export function exportCsv(view, entityId) {
-  window.open(`/api/exports/timetable.csv?view=${view}&entityId=${entityId}`, "_blank", "noopener");
+export async function exportCsv(params = {}) {
+  const response = await requestBlob(`/api/exports/timetable.csv${buildQuery(params)}`);
+  triggerBlobDownload(response.blob, response.filename || "teachtable-export.csv");
 }
 
-export function exportPdf(view, entityId) {
-  window.open(`/api/exports/timetable.pdf?view=${view}&entityId=${entityId}`, "_blank", "noopener");
+export async function exportPdf(params = {}) {
+  const response = await requestBlob(`/api/exports/timetable.pdf${buildQuery(params)}`);
+  triggerBlobDownload(response.blob, response.filename || "teachtable-export.pdf");
+}
+
+export async function printTimetable(params = {}) {
+  const response = await requestBlob(`/api/exports/timetable.pdf${buildQuery(params)}`);
+  openPrintFrame(response.blob, response.filename || "teachtable-print.pdf");
 }

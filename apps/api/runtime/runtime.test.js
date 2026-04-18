@@ -4,8 +4,11 @@ const assert = require("node:assert/strict");
 const { autoSchedule } = require("./auto-scheduler");
 const { applyCollaborativeMutation, claimSlotLock } = require("./collaboration-service");
 const { validateTimetable } = require("./conflict-engine");
+const { buildTimetableCsv } = require("./csv-export");
+const { createByResource } = require("./db-service");
+const { createEmptyDatabase } = require("./empty-data");
 const { createSampleDatabase } = require("./sample-data");
-const { buildDataset } = require("./selectors");
+const { buildCsvPayload, buildDataset, buildPdfPayload } = require("./selectors");
 
 test("autoSchedule creates timetable entries from seeded data", () => {
   const db = createSampleDatabase();
@@ -104,4 +107,79 @@ test("collaboration mutation increments version when locks are held", () => {
 
   assert.equal(response.result.ok, true);
   assert.equal(response.result.nextVersion, dataset.version + 1);
+});
+
+test("create section accepts numeric grade and optional homeroom teacher", () => {
+  const db = createEmptyDatabase();
+  const created = createByResource(db, "sections", {
+    educationLevel: "PRIMARY",
+    grade: 1,
+    roomName: "1",
+    plannedPeriodsPerWeek: 30,
+    academicYear: "2569",
+    term: "1",
+    homeroomTeacherId: "",
+  });
+
+  assert.equal(created.grade, 1);
+  assert.equal(created.roomName, "1");
+  assert.equal(db.sections.length, 1);
+});
+
+test("create section accepts grade labels from the form safely", () => {
+  const db = createEmptyDatabase();
+  const created = createByResource(db, "sections", {
+    educationLevel: "PRIMARY",
+    grade: "ป.4",
+    roomName: "2",
+    plannedPeriodsPerWeek: 30,
+    academicYear: "2569",
+    term: "1",
+    homeroomTeacherId: "",
+  });
+
+  assert.equal(created.grade, 4);
+  assert.equal(created.roomName, "2");
+});
+
+test("buildPdfPayload supports multiple selected reports", () => {
+  const db = createSampleDatabase();
+  const teacherIds = db.teachers.slice(0, 2).map((teacher) => teacher.id);
+  const payload = buildPdfPayload(db, {
+    view: "teacher",
+    scope: "selected",
+    entityIds: teacherIds,
+  });
+
+  assert.equal(payload.reports.length, 2);
+  assert.deepEqual(payload.reports.map((report) => report.entityId), teacherIds);
+});
+
+test("buildTimetableCsv combines selected reports into one file", () => {
+  const db = createSampleDatabase();
+  db.timetables[0].entries = [
+    {
+      id: "entry-1",
+      timetableId: db.timetables[0].id,
+      enrollmentId: db.enrollments[0].id,
+      instructionalGroupId: db.instructionalGroups[0].id,
+      sectionId: db.enrollments[0].sectionId,
+      subjectId: db.enrollments[0].subjectId,
+      deliveryMode: "WHOLE_CLASS",
+      studentGroupKey: "WHOLE_CLASS",
+      roomId: db.rooms[0].id,
+      day: "MON",
+      period: 1,
+      teachers: [{ teacherId: db.teachers[0].id, teachingRole: "LEAD", loadFactor: 1 }],
+    },
+  ];
+
+  const csv = buildTimetableCsv(buildCsvPayload(db, {
+    view: "section",
+    scope: "selected",
+    entityIds: [db.sections[0].id],
+  }));
+
+  assert.match(csv, /มุมมอง,รายการ,/);
+  assert.match(csv, /ห้องเรียน/);
 });

@@ -8,7 +8,6 @@ const PAGE_HEIGHT = 595.28;
 const MARGIN = 32;
 const HEADER_HEIGHT = 28;
 const PERIOD_COLUMN = 64;
-const GRID_ROWS = 6;
 const GRID_COLUMNS = 5;
 
 async function loadFont(pdfDoc) {
@@ -26,11 +25,68 @@ async function loadFont(pdfDoc) {
       const fontBytes = await fs.readFile(fontPath);
       return pdfDoc.embedFont(fontBytes, { subset: true });
     } catch {
-      // Try next font candidate.
+      // Try the next available font.
     }
   }
 
   return pdfDoc.embedFont(StandardFonts.Helvetica);
+}
+
+function decodeImageSource(imageSource) {
+  const value = String(imageSource || "").trim();
+  if (!value) {
+    return null;
+  }
+
+  const dataUrlMatch = value.match(/^data:(image\/(?:png|jpeg|jpg|webp));base64,(.+)$/i);
+  if (dataUrlMatch) {
+    return {
+      mimeType: dataUrlMatch[1].toLowerCase(),
+      bytes: Buffer.from(dataUrlMatch[2], "base64"),
+    };
+  }
+
+  return {
+    mimeType: value.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg",
+    path: path.isAbsolute(value) ? value : path.resolve(process.cwd(), value),
+  };
+}
+
+async function loadEmbeddedImage(pdfDoc, imageSource) {
+  const resolved = decodeImageSource(imageSource);
+  if (!resolved) {
+    return null;
+  }
+
+  try {
+    const bytes = resolved.bytes || await fs.readFile(resolved.path);
+    if (resolved.mimeType.includes("png")) {
+      return pdfDoc.embedPng(bytes);
+    }
+    return pdfDoc.embedJpg(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function drawFittedImage(page, image, frame, options = {}) {
+  if (!image) {
+    return;
+  }
+
+  const scale = Math.min(frame.width / image.width, frame.height / image.height, 1);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  const x = frame.x + (frame.width - width) / 2;
+  const y = frame.y + (frame.height - height) / 2;
+
+  page.drawImage(image, {
+    x,
+    y,
+    width,
+    height,
+    opacity: options.opacity ?? 1,
+  });
 }
 
 function wrapText(font, text, size, maxWidth, maxLines = 6) {
@@ -89,25 +145,43 @@ function drawCellText(page, font, text, x, y, width, height, size = 10.5, color 
   }
 }
 
-async function generateTimetablePdfBuffer(payload) {
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-  const font = await loadFont(pdfDoc);
-  const boldFont = font;
+function normalizeReports(payload = {}) {
+  if (Array.isArray(payload.reports) && payload.reports.length > 0) {
+    return payload.reports;
+  }
 
+  return [
+    {
+      report_title: payload.report_title || "ตารางสอน",
+      education_level: payload.education_level || "-",
+      section_name: payload.section_name || "-",
+      matrix: payload.matrix || [],
+    },
+  ];
+}
+
+function drawReportPage(page, font, context, report, logoImage, signatoryImages) {
   const headerColor = rgb(0.07, 0.24, 0.48);
   const lineColor = rgb(0.8, 0.84, 0.9);
   const subtleFill = rgb(0.94, 0.96, 0.99);
+  const dayLabels = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์"];
+  const tableTop = PAGE_HEIGHT - 116;
+  const tableWidth = PAGE_WIDTH - MARGIN * 2;
+  const cellWidth = (tableWidth - PERIOD_COLUMN) / GRID_COLUMNS;
+  const renderMatrix = Array.isArray(report.matrix) && report.matrix.length
+    ? report.matrix
+    : Array.from({ length: 6 }, () => Array.from({ length: 5 }, () => "-"));
+  const rowHeight = 58;
 
-  page.drawText(payload.school_name, {
+  page.drawText(context.school_name || "TeachTable", {
     x: MARGIN,
     y: PAGE_HEIGHT - 38,
     size: 22,
-    font: boldFont,
+    font,
     color: headerColor,
   });
 
-  page.drawText(payload.report_title, {
+  page.drawText(report.report_title || "ตารางสอน", {
     x: MARGIN,
     y: PAGE_HEIGHT - 62,
     size: 14,
@@ -116,7 +190,7 @@ async function generateTimetablePdfBuffer(payload) {
   });
 
   page.drawText(
-    `ระดับ ${payload.education_level} | รายการ ${payload.section_name} | ภาคเรียน ${payload.term} | ปีการศึกษา ${payload.academic_year}`,
+    `ระดับ ${report.education_level || "-"} | รายการ ${report.section_name || "-"} | ภาคเรียน ${context.term || "-"} | ปีการศึกษา ${context.academic_year || "-"}`,
     {
       x: MARGIN,
       y: PAGE_HEIGHT - 82,
@@ -126,10 +200,14 @@ async function generateTimetablePdfBuffer(payload) {
     },
   );
 
-  const tableTop = PAGE_HEIGHT - 116;
-  const tableWidth = PAGE_WIDTH - MARGIN * 2;
-  const cellWidth = (tableWidth - PERIOD_COLUMN) / GRID_COLUMNS;
-  const rowHeight = 58;
+  if (logoImage) {
+    drawFittedImage(page, logoImage, {
+      x: PAGE_WIDTH - MARGIN - 92,
+      y: PAGE_HEIGHT - 92,
+      width: 84,
+      height: 58,
+    });
+  }
 
   page.drawRectangle({
     x: MARGIN,
@@ -139,8 +217,14 @@ async function generateTimetablePdfBuffer(payload) {
     color: headerColor,
   });
 
-  const dayLabels = ["จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์"];
-  page.drawText("คาบ", { x: MARGIN + 18, y: tableTop - 19, size: 11, font, color: rgb(1, 1, 1) });
+  page.drawText("คาบ", {
+    x: MARGIN + 18,
+    y: tableTop - 19,
+    size: 11,
+    font,
+    color: rgb(1, 1, 1),
+  });
+
   dayLabels.forEach((label, index) => {
     page.drawText(label, {
       x: MARGIN + PERIOD_COLUMN + cellWidth * index + 12,
@@ -151,8 +235,9 @@ async function generateTimetablePdfBuffer(payload) {
     });
   });
 
-  payload.matrix.forEach((row, rowIndex) => {
+  renderMatrix.forEach((row, rowIndex) => {
     const y = tableTop - HEADER_HEIGHT - rowHeight * (rowIndex + 1);
+
     page.drawRectangle({
       x: MARGIN,
       y,
@@ -185,7 +270,7 @@ async function generateTimetablePdfBuffer(payload) {
     });
   });
 
-  page.drawText(`วันที่พิมพ์เอกสาร: ${payload.printed_at}`, {
+  page.drawText(`วันที่พิมพ์เอกสาร: ${context.printed_at || "-"}`, {
     x: MARGIN,
     y: 78,
     size: 11,
@@ -193,10 +278,16 @@ async function generateTimetablePdfBuffer(payload) {
     color: rgb(0.22, 0.3, 0.4),
   });
 
-  const signatories = payload.signatories || [];
+  const signatories = context.signatories || [];
   const signatureWidth = (tableWidth - 20) / 3;
   signatories.slice(0, 3).forEach((signatory, index) => {
     const x = MARGIN + index * (signatureWidth + 10);
+    drawFittedImage(page, signatoryImages[index], {
+      x: x + 8,
+      y: 56,
+      width: signatureWidth - 16,
+      height: 34,
+    });
     page.drawLine({
       start: { x: x + 12, y: 52 },
       end: { x: x + signatureWidth - 12, y: 52 },
@@ -218,6 +309,19 @@ async function generateTimetablePdfBuffer(payload) {
       color: rgb(0.22, 0.3, 0.4),
     });
   });
+}
+
+async function generateTimetablePdfBuffer(payload) {
+  const pdfDoc = await PDFDocument.create();
+  const font = await loadFont(pdfDoc);
+  const logoImage = await loadEmbeddedImage(pdfDoc, payload.logo_path);
+  const signatoryImages = await Promise.all((payload.signatories || []).map((item) => loadEmbeddedImage(pdfDoc, item.signatureImage)));
+  const reports = normalizeReports(payload);
+
+  for (const report of reports) {
+    const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+    drawReportPage(page, font, payload, report, logoImage, signatoryImages);
+  }
 
   return pdfDoc.save();
 }

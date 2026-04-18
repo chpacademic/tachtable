@@ -30,12 +30,76 @@ const SCREEN_META = {
 
 const CATALOG_OPTIONS = [
   { value: "teachers", label: "ครู" },
-  { value: "rooms", label: "ห้องเรียน" },
+  { value: "rooms", label: "ห้อง/สถานที่" },
   { value: "subjects", label: "รายวิชา" },
-  { value: "sections", label: "ห้องเรียน" },
+  { value: "sections", label: "ชั้นเรียน" },
   { value: "enrollments", label: "แผนรายวิชา" },
   { value: "instructionalGroups", label: "กลุ่มการสอน" },
 ];
+
+const TERM_OPTIONS = [
+  { value: "1", label: "ภาคเรียน 1" },
+  { value: "2", label: "ภาคเรียน 2" },
+  { value: "SUMMER", label: "ภาคฤดูร้อน" },
+];
+
+const LEARNING_AREA_OPTIONS = [
+  { value: "ภาษาไทย", label: "ภาษาไทย" },
+  { value: "คณิตศาสตร์", label: "คณิตศาสตร์" },
+  { value: "วิทยาศาสตร์และเทคโนโลยี", label: "วิทยาศาสตร์และเทคโนโลยี" },
+  { value: "สังคมศึกษา ศาสนา และวัฒนธรรม", label: "สังคมศึกษา ศาสนา และวัฒนธรรม" },
+  { value: "สุขศึกษาและพลศึกษา", label: "สุขศึกษาและพลศึกษา" },
+  { value: "ศิลปะ", label: "ศิลปะ" },
+  { value: "การงานอาชีพ", label: "การงานอาชีพ" },
+  { value: "ภาษาต่างประเทศ", label: "ภาษาต่างประเทศ" },
+];
+
+const SUBJECT_KIND_OPTIONS = [
+  { value: "ACADEMIC", label: "รายวิชาตามหลักสูตร" },
+  { value: "DEVELOPMENT_ACTIVITY", label: "กิจกรรมพัฒนาผู้เรียน" },
+];
+
+const SUBJECT_TYPE_OPTIONS = [
+  { value: "CORE", label: "พื้นฐาน" },
+  { value: "ADDITIONAL", label: "เพิ่มเติม" },
+];
+
+const SUBJECT_TYPE_LABELS = {
+  CORE: "พื้นฐาน",
+  ADDITIONAL: "เพิ่มเติม",
+  DEVELOPMENT_ACTIVITY: "กิจกรรมพัฒนาผู้เรียน",
+};
+
+const ACTIVITY_CATEGORY_OPTIONS = [
+  { value: "ลูกเสือ-ยุวกาชาด-เนตรนารี", label: "ลูกเสือ-ยุวกาชาด-เนตรนารี" },
+  { value: "แนะแนว", label: "แนะแนว" },
+  { value: "ชุมนุม", label: "ชุมนุม" },
+  { value: "อบรม-คุณธรรม-จริยธรรม", label: "อบรม-คุณธรรม-จริยธรรม" },
+  { value: "ซ่อม/เสริม", label: "ซ่อม/เสริม" },
+];
+
+const SECTION_GRADE_OPTIONS = {
+  PRIMARY: [
+    { value: "1", label: "ป.1" },
+    { value: "2", label: "ป.2" },
+    { value: "3", label: "ป.3" },
+    { value: "4", label: "ป.4" },
+    { value: "5", label: "ป.5" },
+    { value: "6", label: "ป.6" },
+  ],
+  LOWER_SECONDARY: [
+    { value: "1", label: "ม.1" },
+    { value: "2", label: "ม.2" },
+    { value: "3", label: "ม.3" },
+  ],
+};
+
+const USER_ROLE_LABELS = {
+  ADMIN: "ผู้ดูแลระบบ",
+  ACADEMIC_MANAGER: "งานวิชาการ",
+  SUBJECT_TEACHER: "ครูผู้สอน",
+  HOMEROOM_TEACHER: "ครูประจำชั้น",
+};
 
 const DAY_COLUMNS = [
   { value: "MON", label: "จ.", fullLabel: "วันจันทร์" },
@@ -109,12 +173,195 @@ const VIEW_LABELS = {
   workspace: "พื้นที่ทำงาน",
 };
 
+const NAV_ICONS = {
+  dashboard: "dashboard",
+  catalog: "catalog",
+  timetable: "timetable",
+  settings: "settings",
+};
+
+const ICONS = {
+  dashboard: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+      <rect x="14" y="3" width="7" height="11" rx="2"></rect>
+      <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+      <rect x="14" y="18" width="7" height="3" rx="1.5"></rect>
+    </svg>
+  `,
+  catalog: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 6.5h16"></path>
+      <path d="M4 12h16"></path>
+      <path d="M4 17.5h10"></path>
+      <circle cx="18" cy="17.5" r="2"></circle>
+    </svg>
+  `,
+  timetable: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="17" rx="3"></rect>
+      <path d="M8 2v4"></path>
+      <path d="M16 2v4"></path>
+      <path d="M3 10h18"></path>
+      <path d="M8 14h3"></path>
+      <path d="M13 14h3"></path>
+      <path d="M8 18h3"></path>
+    </svg>
+  `,
+  settings: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 21v-7"></path>
+      <path d="M4 10V3"></path>
+      <path d="M12 21v-11"></path>
+      <path d="M12 6V3"></path>
+      <path d="M20 21v-4"></path>
+      <path d="M20 13V3"></path>
+      <circle cx="4" cy="12" r="2"></circle>
+      <circle cx="12" cy="8" r="2"></circle>
+      <circle cx="20" cy="15" r="2"></circle>
+    </svg>
+  `,
+  refresh: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 11a8 8 0 1 0 2 5.3"></path>
+      <path d="M20 4v7h-7"></path>
+    </svg>
+  `,
+  plus: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14"></path>
+      <path d="M5 12h14"></path>
+    </svg>
+  `,
+  check: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 6 9 17l-5-5"></path>
+    </svg>
+  `,
+  download: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v12"></path>
+      <path d="m7 10 5 5 5-5"></path>
+      <path d="M5 21h14"></path>
+    </svg>
+  `,
+  print: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M7 8V4h10v4"></path>
+      <rect x="5" y="14" width="14" height="7" rx="2"></rect>
+      <rect x="3" y="8" width="18" height="8" rx="3"></rect>
+      <path d="M17 12h.01"></path>
+    </svg>
+  `,
+  spark: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m12 3 1.8 4.5L18 9.3l-4.2 1.8L12 15.6l-1.8-4.5L6 9.3l4.2-1.8Z"></path>
+      <path d="M19 16l.8 2 .8.3-.8.3-.8 2-.8-2-.8-.3.8-.3Z"></path>
+    </svg>
+  `,
+  save: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 4h11l3 3v13H5z"></path>
+      <path d="M9 4v6h6V4"></path>
+      <path d="M9 18h6"></path>
+    </svg>
+  `,
+  edit: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9"></path>
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+    </svg>
+  `,
+  trash: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 6h18"></path>
+      <path d="M8 6V4h8v2"></path>
+      <path d="M19 6l-1 14H6L5 6"></path>
+      <path d="M10 11v6"></path>
+      <path d="M14 11v6"></path>
+    </svg>
+  `,
+  logout: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+      <path d="M16 17l5-5-5-5"></path>
+      <path d="M21 12H9"></path>
+    </svg>
+  `,
+  close: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 6 6 18"></path>
+      <path d="m6 6 12 12"></path>
+    </svg>
+  `,
+};
+
+for (const item of NAV_ITEMS) {
+  item.icon = NAV_ICONS[item.id] || "dashboard";
+}
+
+function iconMarkup(name) {
+  return ICONS[name] ? `<span class="tt-icon" aria-hidden="true">${ICONS[name]}</span>` : "";
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function buildButtonLabel(iconName, label) {
+  return `${iconMarkup(iconName)}<span>${escapeHtml(label)}</span>`;
+}
+
+function buildHelpText(text) {
+  return `<small class="field-help">${escapeHtml(text)}</small>`;
+}
+
+function buildCheckboxGroup(name, items = [], selectedValues = [], options = {}) {
+  const {
+    valueKey = "value",
+    labelKey = "label",
+    descriptionKey = "description",
+    className = "",
+  } = options;
+  const selectedSet = new Set(selectedValues || []);
+
+  return `
+    <div class="checkbox-group ${className}">
+      ${items
+        .map((item, index) => {
+          const value = String(item[valueKey] ?? "");
+          const label = item[labelKey] ?? value;
+          const description = item[descriptionKey] ?? "";
+          const inputId = `${name}-${index}-${value.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+          return `
+            <label class="check-tile" for="${escapeHtml(inputId)}">
+              <input
+                id="${escapeHtml(inputId)}"
+                type="checkbox"
+                name="${escapeHtml(name)}"
+                value="${escapeHtml(value)}"
+                ${selectedSet.has(value) ? "checked" : ""}
+              />
+              <span class="check-tile-copy">
+                <strong>${escapeHtml(label)}</strong>
+                ${description ? `<small>${escapeHtml(description)}</small>` : ""}
+              </span>
+            </label>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function buildImagePreview(src, alt, emptyText) {
+  return src
+    ? `<img class="asset-preview-image" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`
+    : `<div class="asset-preview-empty">${escapeHtml(emptyText)}</div>`;
 }
 
 function formatDayLabel(day) {
@@ -143,6 +390,32 @@ function formatEducationLevel(level) {
 
 function formatRoomType(type) {
   return ROOM_TYPE_LABELS[type] || type || "-";
+}
+
+function formatSubjectType(type) {
+  return SUBJECT_TYPE_LABELS[type] || type || "-";
+}
+
+function buildGradeOptions(educationLevel, currentGrade) {
+  const normalizedGrade = String(currentGrade || "");
+  const options = [...(SECTION_GRADE_OPTIONS[educationLevel] || SECTION_GRADE_OPTIONS.PRIMARY)];
+  if (normalizedGrade && !options.some((item) => item.value === normalizedGrade)) {
+    const prefix = educationLevel === "LOWER_SECONDARY" ? "ม." : "ป.";
+    options.push({ value: normalizedGrade, label: `${prefix}${normalizedGrade}` });
+  }
+  return options;
+}
+
+function formatSubjectPickerMeta(subject) {
+  if (!subject) {
+    return "";
+  }
+
+  if (subject.subjectKind === "DEVELOPMENT_ACTIVITY") {
+    return `กิจกรรมพัฒนาผู้เรียน • ${subject.activityCategory || "ยังไม่ระบุประเภท"}`;
+  }
+
+  return `${formatSubjectType(subject.subjectType)} • ${subject.learningArea || "ยังไม่ระบุกลุ่มสาระ"}`;
 }
 
 function formatResourceType(type) {
@@ -229,15 +502,15 @@ function renderMetrics(metricsRoot, dashboard = {}) {
       tone: "cool",
     },
     {
-      label: "ห้องเรียน",
+      label: "ห้อง/สถานที่",
       value: dashboard.rooms ?? 0,
-      detail: "ห้องเรียนและห้องพิเศษที่พร้อมใช้งานในภาคเรียนนี้",
+      detail: "ห้องเรียนและพื้นที่ใช้งานจริงที่พร้อมใช้ในภาคเรียนนี้",
       tone: "warm",
     },
     {
       label: "รายวิชา",
       value: dashboard.subjects ?? 0,
-      detail: "รายวิชาที่ผูกกับห้องเรียนและครูเรียบร้อยแล้ว",
+      detail: "รายวิชาที่ผูกกับชั้นเรียนและครูเรียบร้อยแล้ว",
       tone: "mint",
     },
     {
@@ -339,17 +612,24 @@ function renderTeacherLoads(root, teacherLoads = []) {
           const max = Math.max(teacher.max || 0, 1);
           const percent = Math.round(((teacher.current || 0) / max) * 100);
           const toneClass = percent >= 95 ? "danger" : percent >= 85 ? "warn" : "safe";
+          const statusLabel = percent >= 95 ? "เกิน 95%" : percent >= 85 ? "ใกล้เต็มเพดาน" : "ภาระยังสมดุล";
+          const subjectSummary = (teacher.subjectNames || []).length
+            ? `${teacher.subjectNames.slice(0, 2).join(", ")}${teacher.subjectNames.length > 2 ? ` และอีก ${teacher.subjectNames.length - 2} วิชา` : ""}`
+            : "ยังไม่ได้ผูกรายวิชา";
           return `
-            <article class="load-row">
-              <div class="status-meta">
+            <article class="load-focus-card ${toneClass}">
+              <div class="status-meta load-focus-head">
                 <div>
                   <strong class="tt-section-title">${escapeHtml(teacher.name)}</strong>
-                  <div class="muted-text">${escapeHtml((teacher.subjectNames || []).join(", ") || "ยังไม่ได้ผูกรายวิชา")}</div>
+                  <div class="muted-text">${escapeHtml(subjectSummary)}</div>
                 </div>
-                <strong>${teacher.current}/${teacher.max} คาบ</strong>
+                <span class="tone-pill ${toneClass}">${escapeHtml(statusLabel)}</span>
               </div>
               <div class="load-bar"><div class="load-fill ${toneClass}" style="width: ${Math.min(percent, 100)}%"></div></div>
-              <p class="muted-text">รับผิดชอบ ${teacher.assignedGroups || 0} กลุ่มการสอน</p>
+              <div class="load-focus-meta">
+                <strong>${teacher.current}/${teacher.max} คาบ</strong>
+                <span class="muted-text">ดูแล ${teacher.assignedGroups || 0} กลุ่มการสอน</span>
+              </div>
             </article>
           `;
         })
@@ -357,20 +637,121 @@ function renderTeacherLoads(root, teacherLoads = []) {
     : buildEmptyState("ยังไม่มีข้อมูลภาระงาน", "เพิ่มครูและคาบเรียนในตารางเพื่อดูการกระจายภาระสอน");
 }
 
+function renderDashboardInsights(root, snapshot = {}) {
+  const completionRate = Math.max(0, Math.min(snapshot.completionRate || 0, 100));
+  const assignedPeriods = snapshot.assignedPeriods || 0;
+  const requiredPeriods = snapshot.requiredPeriods || 0;
+  const unresolvedCount = snapshot.unresolvedCount || 0;
+  const alertCount = snapshot.alertCount || 0;
+  const activeUsers = snapshot.activeUsers || 0;
+  const filteredLabel = snapshot.filteredLabel || "ทุกระดับชั้น";
+
+  root.innerHTML = `
+    <div class="insight-card">
+      <div class="insight-ring" style="--ring-progress:${completionRate}%">
+        <div class="insight-ring-hole">
+          <strong>${completionRate}%</strong>
+          <span>ความพร้อม</span>
+        </div>
+      </div>
+      <div class="insight-copy">
+        <p class="eyebrow">ภาพรวมที่ต้องจับตา</p>
+        <h3 class="tt-section-title">ตารางสอนชุดปัจจุบันกำลังติดตาม ${escapeHtml(filteredLabel)}</h3>
+        <p class="muted-text">จัดแล้ว ${assignedPeriods}/${requiredPeriods} คาบ เหลือกลุ่มที่ยังไม่ลงคาบ ${unresolvedCount} กลุ่ม และมีประเด็นที่ควรตรวจสอบ ${alertCount} รายการ</p>
+        <div class="insight-stat-grid">
+          <article class="mini-stat">
+            <span class="mini-stat-label">คาบที่จัดแล้ว</span>
+            <strong>${assignedPeriods}</strong>
+          </article>
+          <article class="mini-stat">
+            <span class="mini-stat-label">คาบที่ต้องจัด</span>
+            <strong>${requiredPeriods}</strong>
+          </article>
+          <article class="mini-stat">
+            <span class="mini-stat-label">กลุ่มค้างจัด</span>
+            <strong>${unresolvedCount}</strong>
+          </article>
+          <article class="mini-stat">
+            <span class="mini-stat-label">ผู้ใช้ออนไลน์</span>
+            <strong>${activeUsers}</strong>
+          </article>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDashboardBars(root, items = [], options = {}) {
+  const {
+    valueKey = "completionRate",
+    totalKey = "plannedPeriodsPerWeek",
+    currentKey = "assignedPeriods",
+    labelKey = "label",
+    emptyTitle = "ยังไม่มีข้อมูลสำหรับแสดงผล",
+    emptyBody = "เพิ่มข้อมูลในระบบเพื่อให้กราฟและสถิติเริ่มทำงาน",
+    mode = "completion",
+  } = options;
+
+  if (!items.length) {
+    root.innerHTML = buildEmptyState(emptyTitle, emptyBody);
+    return;
+  }
+
+  const rows = items.map((item) => {
+    const percent = Math.max(0, Math.min(item[valueKey] || 0, 100));
+    const toneClass =
+      mode === "load"
+        ? percent >= 95
+          ? "danger"
+          : percent >= 85
+            ? "warn"
+            : "safe"
+        : percent >= 100
+          ? "safe"
+          : percent >= 70
+            ? "warn"
+            : "danger";
+
+    const currentValue = currentKey in item ? item[currentKey] : percent;
+    const totalValue = totalKey in item ? item[totalKey] : 100;
+
+    return `
+      <article class="bar-row">
+        <div class="bar-row-meta">
+          <div>
+            <strong class="tt-section-title">${escapeHtml(item[labelKey] || "-")}</strong>
+            <p class="muted-text">${escapeHtml(item.subtitle || "")}</p>
+          </div>
+          <span class="pill">${escapeHtml(`${currentValue}/${totalValue}`)}</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill ${toneClass}" style="width:${percent}%"></div>
+        </div>
+        <div class="bar-foot">
+          <span>${percent}%</span>
+          <span>${escapeHtml(item.footnote || "")}</span>
+        </div>
+      </article>
+    `;
+  });
+
+  root.innerHTML = `<div class="bar-list">${rows.join("")}</div>`;
+}
+
 function catalogColumns(resource) {
   switch (resource) {
     case "teachers":
       return ["รหัส", "ชื่อครู", "คาบสูงสุด", "บทบาท", "รายวิชา", "จัดการ"];
     case "rooms":
-      return ["รหัส", "ชื่อห้อง", "ประเภท", "ความจุ", "จัดการ"];
+      return ["รหัส", "ห้อง/สถานที่", "ประเภท", "ความจุ", "จัดการ"];
     case "subjects":
-      return ["รหัส", "รายวิชา", "หน่วยกิต", "คาบ/สัปดาห์", "กลุ่มสาระ", "จัดการ"];
+      return ["รหัส", "รายวิชา", "หมวด/ประเภท", "หน่วยกิต", "คาบ/สัปดาห์", "จัดการ"];
     case "sections":
-      return ["ระดับชั้น", "ห้องเรียน", "ภาคเรียน", "คาบเป้าหมาย", "ครูประจำชั้น", "จัดการ"];
+      return ["ระดับชั้น", "ชั้นเรียน", "ภาคเรียน", "คาบเป้าหมาย", "ครูประจำชั้น", "จัดการ"];
     case "enrollments":
-      return ["ห้องเรียน", "รายวิชา", "ครูผู้สอนหลัก", "คาบที่ต้องจัด", "ห้องที่ต้องการ", "จัดการ"];
+      return ["ชั้นเรียน", "รายวิชา", "ครูผู้สอนหลัก", "คาบที่ต้องจัด", "ห้อง/สถานที่หลัก", "จัดการ"];
     case "instructionalGroups":
-      return ["กลุ่ม", "รายวิชา", "ห้องเรียน", "รูปแบบ", "ครู", "จัดการ"];
+      return ["กลุ่ม", "รายวิชา", "ชั้นเรียน", "รูปแบบ", "ครู", "จัดการ"];
     default:
       return [];
   }
@@ -387,17 +768,148 @@ function matchSearch(record, searchText) {
   return JSON.stringify(record).toLowerCase().includes(searchText.toLowerCase());
 }
 
+function matchCatalogFilter(record, resource, filterValue) {
+  if (!filterValue) {
+    return true;
+  }
+
+  if (resource === "teachers") {
+    if (filterValue === "WITH_SUBJECTS") {
+      return (record.subjectIds || []).length > 0;
+    }
+    if (filterValue === "WITHOUT_SUBJECTS") {
+      return (record.subjectIds || []).length === 0;
+    }
+    if (filterValue === "WITH_ROLE") {
+      return (record.roles || []).length > 0;
+    }
+    if (filterValue === "WITHOUT_ROLE") {
+      return (record.roles || []).length === 0;
+    }
+  }
+
+  if (resource === "rooms") {
+    return record.specialType === filterValue;
+  }
+
+  if (resource === "subjects") {
+    if (filterValue.startsWith("AREA:")) {
+      return record.learningArea === filterValue.slice(5);
+    }
+    if (filterValue.startsWith("TYPE:")) {
+      return record.subjectType === filterValue.slice(5);
+    }
+    if (filterValue === "KIND:DEVELOPMENT_ACTIVITY") {
+      return record.subjectKind === "DEVELOPMENT_ACTIVITY";
+    }
+    if (filterValue.startsWith("ACTIVITY:")) {
+      return record.activityCategory === filterValue.slice(9);
+    }
+    return true;
+  }
+
+  if (resource === "sections") {
+    return record.educationLevel === filterValue;
+  }
+
+  if (resource === "enrollments") {
+    if (filterValue === "READY") {
+      return Boolean(record.sectionId && record.subjectId && record.leadTeacherId && record.preferredRoomId);
+    }
+    if (filterValue === "NEEDS_ROOM") {
+      return !record.preferredRoomId;
+    }
+    if (filterValue === "NEEDS_TEACHER") {
+      return !record.leadTeacherId;
+    }
+  }
+
+  if (resource === "instructionalGroups") {
+    if (DELIVERY_MODE_LABELS[filterValue]) {
+      return record.deliveryMode === filterValue;
+    }
+    if (filterValue === "WITH_TEACHER") {
+      return (record.teachers || []).length > 0;
+    }
+    if (filterValue === "WITHOUT_TEACHER") {
+      return (record.teachers || []).length === 0;
+    }
+  }
+
+  return true;
+}
+
+function catalogFilterOptions(resource, data = []) {
+  if (resource === "teachers") {
+    return [
+      { value: "", label: "ตัวกรองทั้งหมด" },
+      { value: "WITH_SUBJECTS", label: "ผูกวิชาแล้ว" },
+      { value: "WITHOUT_SUBJECTS", label: "ยังไม่ผูกวิชา" },
+      { value: "WITH_ROLE", label: "มีบทบาทกำกับ" },
+      { value: "WITHOUT_ROLE", label: "ยังไม่กำหนดบทบาท" },
+    ];
+  }
+
+  if (resource === "rooms") {
+    return [
+      { value: "", label: "ทุกประเภทห้อง" },
+      ...Object.entries(ROOM_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+    ];
+  }
+
+  if (resource === "subjects") {
+    const areas = [...new Set(data.map((item) => item.learningArea).filter(Boolean))];
+    const activities = [...new Set(data.map((item) => item.activityCategory).filter(Boolean))];
+    return [
+      { value: "", label: "ทุกหมวดวิชา" },
+      ...SUBJECT_TYPE_OPTIONS.map((item) => ({ value: `TYPE:${item.value}`, label: item.label })),
+      { value: "KIND:DEVELOPMENT_ACTIVITY", label: "กิจกรรมพัฒนาผู้เรียน" },
+      ...activities.map((value) => ({ value: `ACTIVITY:${value}`, label: value })),
+      ...areas.map((value) => ({ value: `AREA:${value}`, label: value })),
+    ];
+  }
+
+  if (resource === "sections") {
+    return [
+      { value: "", label: "ทุกระดับชั้น" },
+      ...Object.entries(EDUCATION_LEVEL_LABELS).map(([value, label]) => ({ value, label })),
+    ];
+  }
+
+  if (resource === "enrollments") {
+    return [
+      { value: "", label: "ทุกแผนรายวิชา" },
+      { value: "READY", label: "ข้อมูลพร้อมจัดตาราง" },
+      { value: "NEEDS_TEACHER", label: "ยังไม่กำหนดครูหลัก" },
+      { value: "NEEDS_ROOM", label: "ยังไม่กำหนดห้องหลัก" },
+    ];
+  }
+
+  if (resource === "instructionalGroups") {
+    return [
+      { value: "", label: "ทุกกลุ่มการสอน" },
+      ...Object.entries(DELIVERY_MODE_LABELS).map(([value, label]) => ({ value, label })),
+      { value: "WITH_TEACHER", label: "กำหนดครูแล้ว" },
+      { value: "WITHOUT_TEACHER", label: "ยังไม่กำหนดครู" },
+    ];
+  }
+
+  return [{ value: "", label: "ตัวกรองทั้งหมด" }];
+}
+
 function actionButtons(id) {
   return `
     <div class="action-row">
-      <button class="text-button" data-action="edit" data-id="${escapeHtml(id)}">แก้ไข</button>
-      <button class="text-button danger-text" data-action="delete" data-id="${escapeHtml(id)}">ลบ</button>
+      <button class="text-button" type="button" data-action="edit" data-id="${escapeHtml(id)}">${buildButtonLabel("edit", "แก้ไข")}</button>
+      <button class="text-button danger-text" type="button" data-action="delete" data-id="${escapeHtml(id)}">${buildButtonLabel("trash", "ลบ")}</button>
     </div>
   `;
 }
 
-function renderCatalogBody(root, resource, data, lookup, searchText) {
-  const filtered = (data || []).filter((record) => matchSearch(record, searchText));
+function renderCatalogBody(root, resource, data, lookup, searchText, filterValue = "") {
+  const filtered = (data || []).filter(
+    (record) => matchSearch(record, searchText) && matchCatalogFilter(record, resource, filterValue),
+  );
   const rows = filtered.map((record) => {
     if (resource === "teachers") {
       return `
@@ -405,7 +917,7 @@ function renderCatalogBody(root, resource, data, lookup, searchText) {
           <td>${escapeHtml(record.teacherCode)}</td>
           <td>${escapeHtml(record.fullName)}</td>
           <td>${escapeHtml(record.maxPeriodsPerWeek)}</td>
-          <td>${escapeHtml((record.roles || []).join(", ") || "-")}</td>
+          <td>${escapeHtml((record.roles || []).map((role) => USER_ROLE_LABELS[role] || role).join(", ") || "-")}</td>
           <td>${escapeHtml((record.subjectIds || []).map((id) => lookup.subjectMap.get(id)?.name || id).join(", ") || "-")}</td>
           <td>${actionButtons(record.id)}</td>
         </tr>
@@ -425,13 +937,17 @@ function renderCatalogBody(root, resource, data, lookup, searchText) {
     }
 
     if (resource === "subjects") {
+      const subjectCode = record.subjectCode || "-";
+      const subjectMeta = record.subjectKind === "DEVELOPMENT_ACTIVITY"
+        ? `กิจกรรมพัฒนาผู้เรียน • ${record.activityCategory || "-"}`
+        : `${formatSubjectType(record.subjectType)} • ${record.learningArea || "-"}`;
       return `
         <tr>
-          <td>${escapeHtml(record.subjectCode)}</td>
+          <td>${escapeHtml(subjectCode)}</td>
           <td>${escapeHtml(record.name)}</td>
+          <td>${escapeHtml(subjectMeta)}</td>
           <td>${escapeHtml(record.credits)}</td>
           <td>${escapeHtml(record.weeklyPeriods)}</td>
-          <td>${escapeHtml(record.learningArea)}</td>
           <td>${actionButtons(record.id)}</td>
         </tr>
       `;
@@ -476,6 +992,15 @@ function renderCatalogBody(root, resource, data, lookup, searchText) {
   });
 
   root.innerHTML = rows.join("") || buildTableEmptyRow(catalogColumns(resource).length, "ไม่พบข้อมูลที่ตรงกับตัวกรองในขณะนี้");
+  return filtered.length;
+}
+
+function renderCatalogFilterOptions(select, resource, data = [], activeValue = "") {
+  const options = catalogFilterOptions(resource, data);
+  select.disabled = options.length <= 1;
+  select.innerHTML = options
+    .map((item) => `<option value="${escapeHtml(item.value)}" ${item.value === activeValue ? "selected" : ""}>${escapeHtml(item.label)}</option>`)
+    .join("");
 }
 
 function renderViewSwitch(root, activeView) {
@@ -490,13 +1015,88 @@ function renderScopeSelect(select, state, data) {
     ? data.teachers.map((teacher) => ({ id: teacher.id, label: teacher.fullName }))
     : data.sections.map((section) => ({ id: section.id, label: formatSectionLabel(section) }));
 
-  select.innerHTML = source
-    .map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === state.scopeId ? "selected" : ""}>${escapeHtml(item.label)}</option>`)
+  select.disabled = source.length === 0;
+  select.innerHTML = source.length
+    ? source
+        .map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === state.scopeId ? "selected" : ""}>${escapeHtml(item.label)}</option>`)
+        .join("")
+    : '<option value="">ไม่มีข้อมูลให้เลือก</option>';
+}
+
+function renderExportScopeSelect(select, view, activeMode) {
+  const options = view === "teacher"
+    ? [
+        { value: "current", label: "ครูที่เปิดอยู่" },
+        { value: "all", label: "ครูทั้งหมด" },
+        { value: "selected", label: "เฉพาะครูที่เลือก" },
+      ]
+    : [
+        { value: "current", label: "ห้องเรียนที่เปิดอยู่" },
+        { value: "all", label: "ห้องเรียนทั้งหมด" },
+        { value: "selected", label: "เฉพาะห้องที่เลือก" },
+      ];
+
+  select.innerHTML = options
+    .map((item) => `<option value="${escapeHtml(item.value)}" ${item.value === activeMode ? "selected" : ""}>${escapeHtml(item.label)}</option>`)
     .join("");
 }
 
+function renderExportSelectionPanel(root, options = {}) {
+  const {
+    view = "section",
+    mode = "current",
+    entities = [],
+    selectedIds = [],
+    searchText = "",
+  } = options;
+
+  if (mode !== "selected") {
+    root.innerHTML = `
+      <div class="selection-empty">
+        <strong>${escapeHtml(view === "teacher" ? "พิมพ์หรือส่งออกตามครูที่เปิดอยู่" : "พิมพ์หรือส่งออกตามห้องที่เปิดอยู่")}</strong>
+        <p>${escapeHtml(view === "teacher"
+          ? "เปลี่ยนเป็นโหมดเฉพาะครูที่เลือก หากต้องการพิมพ์หรือส่งออกหลายคนพร้อมกัน"
+          : "เปลี่ยนเป็นโหมดเฉพาะห้องที่เลือก หากต้องการพิมพ์หรือส่งออกหลายห้องพร้อมกัน")}</p>
+      </div>
+    `;
+    return;
+  }
+
+  const selectedSet = new Set(selectedIds || []);
+  const normalizedSearch = String(searchText || "").trim().toLowerCase();
+  const filteredEntities = normalizedSearch
+    ? entities.filter((item) => String(item.label || "").toLowerCase().includes(normalizedSearch))
+    : entities;
+
+  root.innerHTML = filteredEntities.length
+    ? `
+      <div class="selection-grid">
+        ${filteredEntities
+          .map((item) => {
+            const checked = selectedSet.has(item.id);
+            return `
+              <label class="selector-chip ${checked ? "is-selected" : ""}">
+                <input type="checkbox" data-export-select="${escapeHtml(item.id)}" ${checked ? "checked" : ""} />
+                <span class="selector-chip-copy">
+                  <strong>${escapeHtml(item.label)}</strong>
+                  <small>${escapeHtml(view === "teacher" ? "ตารางรายครู" : "ตารางรายห้องเรียน")}</small>
+                </span>
+              </label>
+            `;
+          })
+          .join("")}
+      </div>
+    `
+    : `
+      <div class="selection-empty">
+        <strong>${escapeHtml(view === "teacher" ? "ไม่พบครูตามคำค้นหา" : "ไม่พบห้องเรียนตามคำค้นหา")}</strong>
+        <p>ลองเปลี่ยนคำค้นหา หรือกดเลือกทั้งหมดจากรายการที่มีอยู่</p>
+      </div>
+    `;
+}
+
 function renderBoardHead(root) {
-  root.innerHTML = `<div class="board-corner">คาบ</div>${DAY_COLUMNS.map((day) => `<div>${escapeHtml(day.fullLabel)}</div>`).join("")}`;
+  root.innerHTML = `<div class="board-corner">คาบ</div>${DAY_COLUMNS.map((day) => `<div title="${escapeHtml(day.fullLabel)}">${escapeHtml(day.label)}<small>${escapeHtml(day.fullLabel)}</small></div>`).join("")}`;
 }
 
 function renderBoardGrid(root, matrix) {
@@ -504,7 +1104,7 @@ function renderBoardGrid(root, matrix) {
     .map(
       (periodRow, periodIndex) => `
         <div class="board-row">
-          <div class="period-label"><strong>คาบ ${periodIndex + 1}</strong><span>${periodIndex + 1}</span></div>
+          <div class="period-label"><strong>คาบ ${periodIndex + 1}</strong><span>ชั่วโมง ${periodIndex + 1}</span></div>
           ${periodRow
             .map(
               (entries, dayIndex) => `
@@ -512,8 +1112,19 @@ function renderBoardGrid(root, matrix) {
                   ${entries
                     .map(
                       (entry) => `
-                        <article class="entry-card" draggable="true" data-entry-id="${escapeHtml(entry.id)}" style="--entry-color: ${escapeHtml(entry.colorTone)}">
-                          <button class="entry-delete" data-entry-delete="${escapeHtml(entry.id)}">นำออก</button>
+                        <article
+                          class="entry-card"
+                          draggable="true"
+                          data-entry-id="${escapeHtml(entry.id)}"
+                          style="--entry-color: ${escapeHtml(entry.colorTone)}; --entry-soft: ${escapeHtml(entry.colorSoft || "rgba(24, 116, 152, 0.1)")}"
+                        >
+                          <button
+                            class="entry-delete"
+                            type="button"
+                            aria-label="นำออกจากตาราง"
+                            title="นำออกจากตาราง"
+                            data-entry-delete="${escapeHtml(entry.id)}"
+                          >${iconMarkup("trash")}</button>
                           <h4 class="tt-section-title">${escapeHtml(entry.subjectName)}</h4>
                           <p>${escapeHtml(entry.groupName)}</p>
                           <p>${escapeHtml(entry.teacherLabels.join(", "))}</p>
@@ -540,7 +1151,12 @@ function renderGroupPool(root, unresolvedGroups = [], selectedGroupId) {
     ? unresolvedGroups
         .map(
           (group) => `
-            <article class="group-card ${group.groupId === selectedGroupId ? "selected" : ""}" draggable="true" data-group-id="${escapeHtml(group.groupId)}">
+            <article
+              class="group-card ${group.groupId === selectedGroupId ? "selected" : ""}"
+              draggable="true"
+              data-group-id="${escapeHtml(group.groupId)}"
+              style="--group-color: ${escapeHtml(group.colorTone || "#187498")}; --group-soft: ${escapeHtml(group.colorSoft || "rgba(24, 116, 152, 0.12)")}"
+            >
               <div class="status-meta">
                 <h4 class="tt-section-title">${escapeHtml(group.subjectName)}</h4>
                 <span class="pill">${group.remainingPeriods}/${group.requiredPeriodsPerWeek} คาบ</span>
@@ -645,43 +1261,73 @@ function renderLocks(root, activity = {}) {
 }
 
 function renderSettingsForm(root, settings = {}) {
-  const signatories = settings.signatories || [];
+  const signatories = [0, 1, 2].map((index) => settings.signatories?.[index] || {});
   root.innerHTML = `
+    <article class="settings-guide full">
+      <strong class="tt-section-title">ก่อนส่งออกเอกสารให้ตรวจ 3 ส่วน</strong>
+      <p class="muted-text">ระบุชื่อโรงเรียนและภาคเรียน อัปโหลดโลโก้หรือภาพลายเซ็น แล้วตรวจข้อมูลผู้ลงนามให้ครบถ้วนอีกครั้ง</p>
+    </article>
     <label class="field">
       <span>ชื่อสถานศึกษา</span>
-      <input name="schoolName" value="${escapeHtml(settings.schoolName || "")}" />
+      <input name="schoolName" value="${escapeHtml(settings.schoolName || "")}" required />
+      ${buildHelpText("ใช้ชื่อเต็มที่ต้องการให้ปรากฏบนหัวกระดาษและรายงานส่งออก")}
     </label>
     <label class="field">
       <span>ชื่อย่อสถานศึกษา</span>
       <input name="schoolShortName" value="${escapeHtml(settings.schoolShortName || "")}" />
+      ${buildHelpText("ใช้กับมุมมองที่ต้องการข้อความสั้น เช่น แถบหัวระบบหรือคำอธิบายย่อ")}
     </label>
     <label class="field">
       <span>ปีการศึกษา</span>
-      <input name="academicYear" value="${escapeHtml(settings.academicYear || "")}" />
+      <input name="academicYear" value="${escapeHtml(settings.academicYear || "")}" required />
+      ${buildHelpText("ตัวอย่าง 2569 หรือ 2026 ใช้ค่าเดียวกันทั้งระบบเพื่อให้รายงานตรงกัน")}
     </label>
     <label class="field">
       <span>ภาคเรียน</span>
-      <input name="term" value="${escapeHtml(settings.term || "")}" />
-    </label>
-    <label class="field full">
-      <span>พาธโลโก้</span>
-      <input name="logoPath" value="${escapeHtml(settings.logoPath || "")}" />
+      <select name="term" required>${optionTags(TERM_OPTIONS, settings.term || "", "value", "label")}</select>
+      ${buildHelpText("เลือกภาคเรียนที่กำลังจัดตารางอยู่ในชุดข้อมูลนี้")}
     </label>
     <div class="field full">
+      <span>โลโก้โรงเรียน</span>
+      ${buildHelpText("อัปโหลดไฟล์ PNG หรือ JPG เพื่อใช้แสดงในเอกสาร PDF และพื้นที่แสดงผลของโรงเรียน")}
+      <div class="asset-card">
+        <label class="upload-field">
+          <span class="ghost-button">${buildButtonLabel("plus", "อัปโหลดโลโก้")}</span>
+          <input type="file" accept="image/png,image/jpeg,image/jpg" data-hidden-name="logoPath" data-preview-id="logo-preview" />
+        </label>
+        <div class="asset-preview-frame" id="logo-preview">
+          ${buildImagePreview(settings.logoPath || "", "โลโก้โรงเรียน", "ยังไม่ได้อัปโหลดโลโก้")}
+        </div>
+      </div>
+      <input type="hidden" name="logoPath" value="${escapeHtml(settings.logoPath || "")}" />
+    </div>
+    <div class="field full">
       <span>ผู้ลงนามในเอกสาร PDF</span>
+      ${buildHelpText("กรอกตำแหน่ง ชื่อ และแนบลายเซ็นได้สูงสุด 3 รายการ ระบบจะใช้ชุดนี้ตอนส่งออก PDF")}
       <div class="signatory-grid">
         ${[0, 1, 2]
           .map(
             (index) => `
               <div class="signatory-card">
+                <p class="sidebar-label">ชุดลายเซ็น ${index + 1}</p>
                 <label class="field">
                   <span>ตำแหน่ง</span>
                   <input name="signatoryTitle${index}" value="${escapeHtml(signatories[index]?.title || "")}" />
+                  ${buildHelpText("เช่น ผู้อำนวยการโรงเรียน หรือ รองผู้อำนวยการฝ่ายวิชาการ")}
                 </label>
                 <label class="field">
                   <span>ชื่อ-สกุล</span>
                   <input name="signatoryName${index}" value="${escapeHtml(signatories[index]?.name || "")}" />
+                  ${buildHelpText("ระบุชื่อที่ต้องการพิมพ์ใต้เส้นลายเซ็น")}
                 </label>
+                <label class="upload-field compact-upload">
+                  <span class="ghost-button compact-button">${buildButtonLabel("plus", "อัปโหลดลายเซ็น")}</span>
+                  <input type="file" accept="image/png,image/jpeg,image/jpg" data-hidden-name="signatorySignatureImage${index}" data-preview-id="signatory-preview-${index}" />
+                </label>
+                <div class="asset-preview-frame small" id="signatory-preview-${index}">
+                  ${buildImagePreview(signatories[index]?.signatureImage || "", `ลายเซ็น ${index + 1}`, "ยังไม่ได้แนบลายเซ็น")}
+                </div>
+                <input type="hidden" name="signatorySignatureImage${index}" value="${escapeHtml(signatories[index]?.signatureImage || "")}" />
               </div>
             `,
           )
@@ -695,9 +1341,12 @@ function renderNav(root, activeScreen) {
   root.innerHTML = NAV_ITEMS
     .map(
       (item) => `
-        <button class="nav-item ${item.id === activeScreen ? "is-active" : ""}" data-screen="${item.id}">
-          <span>${escapeHtml(item.label)}</span>
-          <small>${escapeHtml(item.hint)}</small>
+        <button class="nav-item ${item.id === activeScreen ? "is-active" : ""}" data-screen="${item.id}" aria-current="${item.id === activeScreen ? "page" : "false"}" title="${escapeHtml(item.hint)}">
+          ${iconMarkup(item.icon)}
+          <span class="nav-copy">
+            <span>${escapeHtml(item.label)}</span>
+            <small>${escapeHtml(item.hint)}</small>
+          </span>
         </button>
       `,
     )
@@ -720,7 +1369,7 @@ function buildTeacherAssignmentRows(assignments, teachers) {
             <div class="assignment-row" data-assignment-index="${index}">
               <label class="field">
                 <span>ครูผู้สอน</span>
-                <select data-assignment-field="teacherId">${optionTags(teachers, assignment.teacherId, "id", "fullName")}</select>
+                <select data-assignment-field="teacherId" required>${optionTags(teachers, assignment.teacherId, "id", "fullName")}</select>
               </label>
               <label class="field">
                 <span>บทบาท</span>
@@ -732,9 +1381,9 @@ function buildTeacherAssignmentRows(assignments, teachers) {
               </label>
               <label class="field">
                 <span>สัดส่วนภาระสอน</span>
-                <input type="number" step="0.25" min="0.25" data-assignment-field="loadFactor" value="${escapeHtml(assignment.loadFactor || 1)}" />
+                <input type="number" step="0.25" min="0.25" data-assignment-field="loadFactor" value="${escapeHtml(assignment.loadFactor || 1)}" required />
               </label>
-              <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">ลบแถว</button>
+              <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">${buildButtonLabel("trash", "ลบแถว")}</button>
             </div>
           `,
         )
@@ -748,7 +1397,7 @@ function buildAssignmentRowHtml(teachers, assignment = {}, index = 0) {
     <div class="assignment-row" data-assignment-index="${index}">
       <label class="field">
         <span>ครูผู้สอน</span>
-        <select data-assignment-field="teacherId">${optionTags(teachers, assignment.teacherId, "id", "fullName")}</select>
+        <select data-assignment-field="teacherId" required>${optionTags(teachers, assignment.teacherId, "id", "fullName")}</select>
       </label>
       <label class="field">
         <span>บทบาท</span>
@@ -760,85 +1409,146 @@ function buildAssignmentRowHtml(teachers, assignment = {}, index = 0) {
       </label>
       <label class="field">
         <span>สัดส่วนภาระสอน</span>
-        <input type="number" step="0.25" min="0.25" data-assignment-field="loadFactor" value="${escapeHtml(assignment.loadFactor || 1)}" />
+        <input type="number" step="0.25" min="0.25" data-assignment-field="loadFactor" value="${escapeHtml(assignment.loadFactor || 1)}" required />
       </label>
-      <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">ลบแถว</button>
+      <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">${buildButtonLabel("trash", "ลบแถว")}</button>
     </div>
   `;
 }
 
 function buildModalForm(resource, record, lookup) {
   if (resource === "teachers") {
+    const roleOptions = Object.entries(USER_ROLE_LABELS).map(([value, label]) => ({
+      value,
+      label,
+      description:
+        value === "ADMIN"
+          ? "ดูภาพรวมและตั้งค่าระบบ"
+          : value === "ACADEMIC_MANAGER"
+            ? "กำกับข้อมูลหลักและการจัดตาราง"
+            : value === "HOMEROOM_TEACHER"
+              ? "ดูแลชั้นประจำและห้องเรียน"
+              : "มีรายวิชาและภาระสอนในตาราง",
+    }));
+    const subjectOptions = lookup.subjects.map((subject) => ({
+      value: subject.id,
+      label: subject.name,
+      description: formatSubjectPickerMeta(subject),
+    }));
     return `
-      <label class="field"><span>รหัสครู</span><input name="teacherCode" value="${escapeHtml(record.teacherCode || "")}" required /></label>
-      <label class="field"><span>ชื่อ-สกุล</span><input name="fullName" value="${escapeHtml(record.fullName || "")}" required /></label>
-      <label class="field"><span>คาบสูงสุดต่อสัปดาห์</span><input name="maxPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.maxPeriodsPerWeek || 24)}" /></label>
-      <label class="field"><span>บทบาท (คั่นด้วยเครื่องหมายจุลภาค)</span><input name="rolesText" value="${escapeHtml((record.roles || []).join(", "))}" /></label>
-      <label class="field full"><span>รายวิชาที่สอน</span><select multiple name="subjectIds">${optionTags(lookup.subjects, "", "id", "name", false)}</select></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลครู</button></div>
+      <label class="field">
+        <span>รหัสครู</span>
+        <input name="teacherCode" value="${escapeHtml(record.teacherCode || "")}" required />
+        ${buildHelpText("ใช้รหัสที่ไม่ซ้ำกัน เช่น T001 หรือ วช.01")}
+      </label>
+      <label class="field">
+        <span>ชื่อ-สกุล</span>
+        <input name="fullName" value="${escapeHtml(record.fullName || "")}" required />
+        ${buildHelpText("ใช้ชื่อเต็มสำหรับแสดงในตาราง รายงาน และการค้นหา")}
+      </label>
+      <label class="field">
+        <span>คาบสูงสุดต่อสัปดาห์</span>
+        <input name="maxPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.maxPeriodsPerWeek || 24)}" required />
+        ${buildHelpText("กำหนดเพดานภาระสอนเพื่อช่วยป้องกันการจัดตารางเกินกำลัง")}
+      </label>
+      <div class="field full">
+        <span>บทบาทการใช้งาน</span>
+        ${buildCheckboxGroup("roles", roleOptions, record.roles || [])}
+        ${buildHelpText("เลือกได้มากกว่า 1 บทบาท หากครูคนเดียวรับผิดชอบหลายหน้าที่")}
+      </div>
+      <div class="field full">
+        <span>รายวิชาที่สอน</span>
+        ${
+          subjectOptions.length
+            ? buildCheckboxGroup("subjectIds", subjectOptions, record.subjectIds || [], { className: "subject-checkbox-group" })
+            : '<div class="field-note">ยังไม่มีรายวิชาในระบบ กรุณาเพิ่มรายวิชาก่อนจึงจะผูกกับครูได้</div>'
+        }
+        ${buildHelpText("เลือกวิชาที่ครูคนนี้รับผิดชอบ เพื่อช่วยกรองและแนะนำการจัดตารางได้แม่นยำขึ้น")}
+      </div>
+      <div class="full action-row modal-actions"><button class="primary-button" data-icon="save" type="submit">${buildButtonLabel("save", "บันทึกข้อมูลครู")}</button></div>
     `;
   }
 
   if (resource === "rooms") {
     return `
-      <label class="field"><span>รหัสห้อง</span><input name="roomCode" value="${escapeHtml(record.roomCode || "")}" required /></label>
-      <label class="field"><span>ชื่อห้อง</span><input name="name" value="${escapeHtml(record.name || "")}" required /></label>
-      <label class="field"><span>ประเภทห้อง</span><input name="specialType" value="${escapeHtml(record.specialType || "CLASSROOM")}" /></label>
-      <label class="field"><span>ความจุ</span><input name="capacity" type="number" min="1" value="${escapeHtml(record.capacity || 40)}" /></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลห้อง</button></div>
+      <label class="field"><span>รหัสห้อง/สถานที่</span><input name="roomCode" value="${escapeHtml(record.roomCode || "")}" required />${buildHelpText("ใช้รหัสที่ไม่ซ้ำ เช่น R101, LAB-A หรือ HALL-1")}</label>
+      <label class="field"><span>ชื่อห้อง/สถานที่</span><input name="name" value="${escapeHtml(record.name || "")}" required />${buildHelpText("ใช้ชื่อที่ครูและงานวิชาการเข้าใจตรงกัน เช่น ห้องคอม 1 หรือ อาคารอเนกประสงค์")}</label>
+      <label class="field"><span>ประเภทห้อง</span><select name="specialType">${Object.entries(ROOM_TYPE_LABELS).map(([value, label]) => `<option value="${value}" ${value === (record.specialType || "CLASSROOM") ? "selected" : ""}>${label}</option>`).join("")}</select>${buildHelpText("ช่วยกรองห้องให้ตรงกับลักษณะวิชาและการใช้งานจริง")}</label>
+      <label class="field"><span>ความจุ</span><input name="capacity" type="number" min="1" value="${escapeHtml(record.capacity || 40)}" required />${buildHelpText("กำหนดจำนวนที่รองรับได้เพื่อใช้วางแผนห้องเฉพาะหรือห้องรวม")}</label>
+      <div class="full action-row modal-actions"><button class="primary-button" data-icon="save" type="submit">${buildButtonLabel("save", "บันทึกข้อมูลห้อง/สถานที่")}</button></div>
     `;
   }
 
   if (resource === "subjects") {
+    const subjectKind = record.subjectKind || "ACADEMIC";
     return `
-      <label class="field"><span>รหัสวิชา</span><input name="subjectCode" value="${escapeHtml(record.subjectCode || "")}" required /></label>
-      <label class="field"><span>ชื่อรายวิชา</span><input name="name" value="${escapeHtml(record.name || "")}" required /></label>
-      <label class="field"><span>หน่วยกิต</span><input name="credits" type="number" min="0" step="0.5" value="${escapeHtml(record.credits || 1)}" /></label>
-      <label class="field"><span>คาบต่อสัปดาห์</span><input name="weeklyPeriods" type="number" min="1" value="${escapeHtml(record.weeklyPeriods || 1)}" /></label>
-      <label class="field full"><span>กลุ่มสาระ</span><input name="learningArea" value="${escapeHtml(record.learningArea || "")}" /></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลวิชา</button></div>
+      <label class="field"><span>หมวดข้อมูล</span><select name="subjectKind" required>${optionTags(SUBJECT_KIND_OPTIONS, subjectKind, "value", "label", false)}</select>${buildHelpText("ถ้าเลือกกิจกรรมพัฒนาผู้เรียน สามารถเว้นรหัสวิชาได้ และเลือกประเภทกิจกรรมแทน")}</label>
+      <label class="field"><span>รหัสวิชา</span><input name="subjectCode" value="${escapeHtml(record.subjectCode || "")}" />${buildHelpText("ถ้าเป็นรายวิชาตามหลักสูตรให้ใส่รหัสจริง แต่ถ้าเป็นกิจกรรมพัฒนาผู้เรียนสามารถเว้นว่างได้")}</label>
+      <label class="field"><span>ชื่อรายวิชา</span><input name="name" value="${escapeHtml(record.name || "")}" required />${buildHelpText("ใช้ชื่อเต็มของวิชาเพื่อให้ค้นหาและพิมพ์รายงานได้ชัดเจน")}</label>
+      <label class="field"><span>ประเภทรายวิชา</span><select name="subjectType">${optionTags(SUBJECT_TYPE_OPTIONS, record.subjectType || "CORE", "value", "label")}</select>${buildHelpText("ใช้กับรายวิชาตามหลักสูตร เช่น พื้นฐาน หรือ เพิ่มเติม")}</label>
+      <label class="field"><span>หน่วยกิต</span><input name="credits" type="number" min="0" step="0.5" value="${escapeHtml(record.credits || 1)}" required />${buildHelpText("ใช้ค่าเดียวกับเอกสารหลักสูตรหรือแผนการเรียน")}</label>
+      <label class="field"><span>คาบต่อสัปดาห์</span><input name="weeklyPeriods" type="number" min="1" value="${escapeHtml(record.weeklyPeriods || 1)}" required />${buildHelpText("จำนวนคาบนี้ช่วยให้ระบบประเมินภาระสอนและความครบของตาราง")}</label>
+      <label class="field"><span>กลุ่มสาระการเรียนรู้</span><select name="learningArea">${optionTags(LEARNING_AREA_OPTIONS, record.learningArea || "", "value", "label")}</select>${buildHelpText("ใช้กับรายวิชาตามหลักสูตร เพื่อช่วยจัดหมวดหมู่และกรองข้อมูลได้ง่าย")}</label>
+      <label class="field"><span>ประเภทกิจกรรมพัฒนาผู้เรียน</span><select name="activityCategory">${optionTags(ACTIVITY_CATEGORY_OPTIONS, record.activityCategory || "", "value", "label")}</select>${buildHelpText("เลือกเมื่อเป็นกิจกรรมพัฒนาผู้เรียน เช่น แนะแนว ชุมนุม หรือ ลูกเสือ-ยุวกาชาด-เนตรนารี")}</label>
+      <div class="full action-row modal-actions"><button class="primary-button" data-icon="save" type="submit">${buildButtonLabel("save", "บันทึกข้อมูลวิชา")}</button></div>
     `;
   }
 
   if (resource === "sections") {
+    const educationLevel = record.educationLevel || "PRIMARY";
+    const currentGrade = String(record.grade || "1");
+    const gradeOptions = buildGradeOptions(educationLevel, currentGrade);
+    const academicYear = record.academicYear || lookup.settings?.academicYear || "";
+    const term = record.term || lookup.settings?.term || "1";
+    const previewLabel = formatSectionLabel({
+      educationLevel,
+      grade: currentGrade,
+      roomName: record.roomName || "?",
+    });
     return `
-      <label class="field"><span>ระดับชั้น</span><select name="educationLevel">${Object.entries(EDUCATION_LEVEL_LABELS).map(([level, label]) => `<option value="${level}" ${level === record.educationLevel ? "selected" : ""}>${label}</option>`).join("")}</select></label>
-      <label class="field"><span>ชั้นปี</span><input name="grade" type="number" min="1" value="${escapeHtml(record.grade || 1)}" /></label>
-      <label class="field"><span>เลขห้อง</span><input name="roomName" value="${escapeHtml(record.roomName || "")}" /></label>
-      <label class="field"><span>คาบเป้าหมายต่อสัปดาห์</span><input name="plannedPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.plannedPeriodsPerWeek || 30)}" /></label>
-      <label class="field"><span>ปีการศึกษา</span><input name="academicYear" value="${escapeHtml(record.academicYear || "")}" /></label>
-      <label class="field"><span>ภาคเรียน</span><input name="term" value="${escapeHtml(record.term || "")}" /></label>
-      <label class="field full"><span>ครูประจำชั้น</span><select name="homeroomTeacherId">${optionTags(lookup.teachers, record.homeroomTeacherId, "id", "fullName")}</select></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลห้องเรียน</button></div>
+      <label class="field"><span>ระดับชั้น</span><select name="educationLevel" required>${optionTags(Object.entries(EDUCATION_LEVEL_LABELS).map(([value, label]) => ({ value, label })), educationLevel, "value", "label", false)}</select>${buildHelpText("เลือกระดับก่อน แล้วระบบจะกรองชั้นปีให้ตรงโดยอัตโนมัติ")}</label>
+      <label class="field"><span>ชั้นปี</span><select name="grade" required>${optionTags(gradeOptions, currentGrade, "value", "label", false)}</select>${buildHelpText("เปลี่ยนจากการพิมพ์เองเป็นการเลือกจากรายการ เพื่อป้องกันกรอกครบแต่บันทึกไม่ผ่าน")}</label>
+      <label class="field"><span>เลขห้อง/กลุ่มเรียน</span><input name="roomName" value="${escapeHtml(record.roomName || "")}" required />${buildHelpText("ตัวอย่าง 1, 2, 3 หรือ A, B เพื่อใช้แสดงเป็น ป.4/1 หรือ ม.2/A")}</label>
+      <label class="field"><span>คาบเป้าหมายต่อสัปดาห์</span><input name="plannedPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.plannedPeriodsPerWeek || 30)}" required />${buildHelpText("ระบบใช้ค่านี้เพื่อตรวจว่าตารางของชั้นเรียนครบตามเป้าหมายหรือไม่")}</label>
+      <label class="field"><span>ปีการศึกษา</span><input name="academicYear" value="${escapeHtml(academicYear)}" placeholder="${escapeHtml(lookup.settings?.academicYear || "ใช้ค่าจากการตั้งค่าหลัก")}" />${buildHelpText("ปล่อยว่างได้หากต้องการใช้ค่าหลักของระบบโดยอัตโนมัติ")}</label>
+      <label class="field"><span>ภาคเรียน</span><select name="term" required>${optionTags(TERM_OPTIONS, term, "value", "label", false)}</select>${buildHelpText("ระบบตั้งค่าเริ่มต้นตามภาคเรียนหลักไว้ให้ เพื่อลดการกรอกซ้ำ")}</label>
+      <label class="field full"><span>ครูประจำชั้น</span><select name="homeroomTeacherId">${optionTags(lookup.teachers, record.homeroomTeacherId, "id", "fullName")}</select>${buildHelpText("เว้นว่างได้ หากยังไม่กำหนดครูประจำชั้นในตอนนี้")}</label>
+      <div class="field full">
+        <span>ตัวอย่างชั้นเรียนที่จะบันทึก</span>
+        <div class="section-preview" id="section-preview">${escapeHtml(previewLabel)}</div>
+        ${buildHelpText("ตรวจชื่อย่อก่อนบันทึกได้ทันที เช่น ป.4/1 หรือ ม.2/A")}
+      </div>
+      <div class="full action-row modal-actions"><button class="primary-button" data-icon="save" type="submit">${buildButtonLabel("save", "บันทึกข้อมูลชั้นเรียน")}</button></div>
     `;
   }
 
   if (resource === "enrollments") {
     return `
-      <label class="field"><span>ห้องเรียน</span><select name="sectionId">${optionTags(lookup.sections.map((section) => ({ ...section, label: formatSectionLabel(section) })), record.sectionId, "id", "label")}</select></label>
-      <label class="field"><span>รายวิชา</span><select name="subjectId">${optionTags(lookup.subjects, record.subjectId, "id", "name")}</select></label>
-      <label class="field"><span>ครูผู้สอนหลัก</span><select name="leadTeacherId">${optionTags(lookup.teachers, record.leadTeacherId, "id", "fullName")}</select></label>
-      <label class="field"><span>คาบที่ต้องจัด</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" /></label>
-      <label class="field"><span>ห้องที่ต้องการ</span><select name="preferredRoomId">${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select></label>
-      <label class="field full"><span>หมายเหตุ</span><textarea name="notes">${escapeHtml(record.notes || "")}</textarea></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกแผนรายวิชา</button></div>
+      <label class="field"><span>ชั้นเรียนที่เปิดสอน</span><select name="sectionId" required>${optionTags(lookup.sections.map((section) => ({ ...section, label: formatSectionLabel(section) })), record.sectionId, "id", "label")}</select>${buildHelpText("เลือกชั้นเรียนปลายทางของวิชานี้ให้ตรงก่อนบันทึก")}</label>
+      <label class="field"><span>รายวิชา</span><select name="subjectId" required>${optionTags(lookup.subjects, record.subjectId, "id", "name")}</select>${buildHelpText("ระบบจะใช้ข้อมูลวิชาเพื่อคำนวณภาระสอนและตรวจความครบของตาราง")}</label>
+      <label class="field"><span>ครูผู้สอนหลัก</span><select name="leadTeacherId" required>${optionTags(lookup.teachers, record.leadTeacherId, "id", "fullName")}</select>${buildHelpText("เลือกครูหลักก่อน เพื่อให้การสร้างกลุ่มการสอนและคำแนะนำทำงานได้ครบ")}</label>
+      <label class="field"><span>คาบที่ต้องจัด</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" required />${buildHelpText("จำนวนคาบต่อสัปดาห์ของวิชานี้ในชั้นเรียนนี้")}</label>
+      <label class="field"><span>ห้อง/สถานที่หลัก</span><select name="preferredRoomId" required>${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select>${buildHelpText("เลือกห้องหลักที่ควรใช้เป็นค่าเริ่มต้นตอนจัดตาราง")}</label>
+      <label class="field full"><span>หมายเหตุ</span><textarea name="notes">${escapeHtml(record.notes || "")}</textarea>${buildHelpText("ใช้บันทึกเงื่อนไขพิเศษ เช่น ใช้ห้องเฉพาะหรือสลับสัปดาห์")}</label>
+      <div class="full action-row modal-actions"><button class="primary-button" data-icon="save" type="submit">${buildButtonLabel("save", "บันทึกแผนรายวิชา")}</button></div>
     `;
   }
 
   return `
-    <label class="field"><span>แผนรายวิชา</span><select name="enrollmentId">${optionTags(lookup.enrollments.map((enrollment) => ({ ...enrollment, label: `${lookup.subjectMap.get(enrollment.subjectId)?.name || "-"} • ${formatSectionLabel(lookup.sectionMap.get(enrollment.sectionId))}` })), record.enrollmentId, "id", "label")}</select></label>
-    <label class="field"><span>รหัสกลุ่ม</span><input name="groupCode" value="${escapeHtml(record.groupCode || "")}" /></label>
-    <label class="field"><span>ชื่อกลุ่มแสดงผล</span><input name="displayName" value="${escapeHtml(record.displayName || "")}" /></label>
-    <label class="field"><span>รูปแบบการสอน</span><select name="deliveryMode">${Object.entries(DELIVERY_MODE_LABELS).map(([mode, label]) => `<option value="${mode}" ${mode === record.deliveryMode ? "selected" : ""}>${label}</option>`).join("")}</select></label>
-    <label class="field"><span>คีย์กลุ่มผู้เรียน</span><input name="studentGroupKey" value="${escapeHtml(record.studentGroupKey || "")}" /></label>
-    <label class="field"><span>คาบที่ต้องจัด</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" /></label>
-    <label class="field full"><span>ห้องที่ต้องการ</span><select name="preferredRoomId">${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select></label>
+    <label class="field"><span>แผนรายวิชา</span><select name="enrollmentId" required>${optionTags(lookup.enrollments.map((enrollment) => ({ ...enrollment, label: `${lookup.subjectMap.get(enrollment.subjectId)?.name || "-"} • ${formatSectionLabel(lookup.sectionMap.get(enrollment.sectionId))}` })), record.enrollmentId, "id", "label")}</select>${buildHelpText("เลือกแผนรายวิชาต้นทางก่อน เพื่อดึงชั้นเรียนและวิชามาอ้างอิงให้ถูกชุด")}</label>
+    <label class="field"><span>รหัสกลุ่ม</span><input name="groupCode" value="${escapeHtml(record.groupCode || "")}" required />${buildHelpText("ใช้รหัสที่ไม่ซ้ำ เช่น G1, TH-SPLIT-A หรือ WHOLE-1")}</label>
+    <label class="field"><span>ชื่อกลุ่มแสดงผล</span><input name="displayName" value="${escapeHtml(record.displayName || "")}" required />${buildHelpText("ชื่อที่จะแสดงบนการ์ดวิชาในตารางสอน")}</label>
+    <label class="field"><span>รูปแบบการสอน</span><select name="deliveryMode" required>${Object.entries(DELIVERY_MODE_LABELS).map(([mode, label]) => `<option value="${mode}" ${mode === record.deliveryMode ? "selected" : ""}>${label}</option>`).join("")}</select>${buildHelpText("ใช้ทั้งห้อง, กลุ่มย่อย หรือสอนร่วม เพื่อให้ระบบตรวจชนกลุ่มได้ถูกต้อง")}</label>
+    <label class="field"><span>คีย์กลุ่มผู้เรียน</span><input name="studentGroupKey" value="${escapeHtml(record.studentGroupKey || "")}" required />${buildHelpText("ถ้าเป็นทั้งห้องใช้ WHOLE_CLASS, ถ้าเป็นกลุ่มย่อยใช้ 1, 2, 3 ตามชุดนักเรียน")}</label>
+    <label class="field"><span>คาบที่ต้องจัด</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" required />${buildHelpText("จำนวนคาบของกลุ่มนี้ต่อสัปดาห์ ระบบจะติดตามว่าจัดครบตามจำนวนหรือไม่")}</label>
+    <label class="field full"><span>ห้อง/สถานที่หลัก</span><select name="preferredRoomId" required>${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select>${buildHelpText("ใช้เป็นห้องเริ่มต้นเวลาเลือกลงคาบหรือให้ระบบช่วยจัดตาราง")}</label>
     <div class="field full">
       <span>การมอบหมายครูผู้สอน</span>
+      ${buildHelpText("อย่างน้อย 1 คนต่อกลุ่มการสอน และเลือกบทบาทให้ชัดเจนหากสอนร่วม")}
       ${buildTeacherAssignmentRows(record.teachers || [], lookup.teachers)}
-      <button type="button" class="ghost-button" id="add-assignment-button">เพิ่มครูผู้สอน</button>
+      <button type="button" class="ghost-button" id="add-assignment-button">${buildButtonLabel("plus", "เพิ่มครูผู้สอน")}</button>
     </div>
-    <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกกลุ่มการสอน</button></div>
+    <div class="full action-row modal-actions"><button class="primary-button" data-icon="save" type="submit">${buildButtonLabel("save", "บันทึกกลุ่มการสอน")}</button></div>
   `;
 }
 
@@ -852,11 +1562,16 @@ export {
   renderStatusList,
   renderSectionStatuses,
   renderAlertFeed,
+  renderDashboardBars,
+  renderDashboardInsights,
   renderTeacherLoads,
   renderCatalogHead,
   renderCatalogBody,
+  renderCatalogFilterOptions,
   renderViewSwitch,
   renderScopeSelect,
+  renderExportScopeSelect,
+  renderExportSelectionPanel,
   renderBoardHead,
   renderBoardGrid,
   renderGroupPool,
@@ -871,6 +1586,9 @@ export {
   buildModalForm,
   buildTeacherAssignmentRows,
   buildAssignmentRowHtml,
+  buildButtonLabel,
+  SECTION_GRADE_OPTIONS,
+  iconMarkup,
   escapeHtml,
   formatSectionLabel,
   formatDeliveryMode,

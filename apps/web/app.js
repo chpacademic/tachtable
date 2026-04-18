@@ -6,10 +6,12 @@ import {
   deleteResource,
   exportCsv,
   exportPdf,
+  getActivity,
   getBootstrap,
   getSuggestions,
   heartbeat,
   joinCollaboration,
+  printTimetable,
   releaseLock,
   saveResource,
   saveSettings,
@@ -27,8 +29,11 @@ import {
 import {
   DAY_COLUMNS,
   SCREEN_META,
+  SECTION_GRADE_OPTIONS,
   buildAssignmentRowHtml,
+  buildButtonLabel,
   buildModalForm,
+  escapeHtml,
   formatDeliveryMode,
   formatSectionLabel,
   formatTeachingRole,
@@ -37,8 +42,13 @@ import {
   renderBoardGrid,
   renderBoardHead,
   renderCatalogBody,
+  renderCatalogFilterOptions,
   renderCatalogHead,
   renderCatalogOptions,
+  renderDashboardBars,
+  renderDashboardInsights,
+  renderExportScopeSelect,
+  renderExportSelectionPanel,
   renderGroupPool,
   renderLocks,
   renderMetrics,
@@ -57,14 +67,19 @@ import {
 
 const DEFAULT_SCREEN = "dashboard";
 const SCREEN_IDS = new Set(Object.keys(SCREEN_META));
-const HEARTBEAT_INTERVAL_MS = 30000;
+const HEARTBEAT_INTERVAL_MS = 60000;
 
 const state = {
   screen: resolveScreenFromHash(),
   catalogType: "teachers",
+  catalogFilter: "",
   catalogSearch: "",
+  dashboardLevelFilter: "",
   view: "section",
   scopeId: "",
+  exportScope: "current",
+  exportSearch: "",
+  exportSelectionIds: [],
   selectedGroupId: "",
   suggestions: [],
   dragPayload: null,
@@ -87,12 +102,30 @@ const state = {
     userId: "",
     displayName: "",
   },
+  lookupCache: {
+    data: null,
+    value: null,
+  },
+  settingsDirty: false,
   busy: new Set(),
 };
 
 let authUnsubscribe = () => undefined;
 let heartbeatTimer = null;
 let unauthorizedHandled = false;
+
+const SUBJECT_AREA_COLORS = {
+  "ภาษาไทย": "#d95f5f",
+  "คณิตศาสตร์": "#2a9d8f",
+  "วิทยาศาสตร์และเทคโนโลยี": "#2176c7",
+  "สังคมศึกษา ศาสนา และวัฒนธรรม": "#d49a1f",
+  "สุขศึกษาและพลศึกษา": "#ef7d57",
+  "ศิลปะ": "#b95db1",
+  "การงานอาชีพ": "#8f6b3a",
+  "ภาษาต่างประเทศ": "#5a6fd8",
+};
+const DEVELOPMENT_ACTIVITY_COLOR = "#f28f3b";
+const DEFAULT_SUBJECT_COLOR = "#187498";
 
 const dom = {
   bootScreen: document.getElementById("boot-screen"),
@@ -127,16 +160,29 @@ const dom = {
   alertFeed: document.getElementById("alert-feed"),
   teacherLoads: document.getElementById("teacher-loads"),
   catalogType: document.getElementById("catalog-type"),
+  catalogFilter: document.getElementById("catalog-filter"),
   catalogSearch: document.getElementById("catalog-search"),
   addRecordButton: document.getElementById("add-record-button"),
   catalogSummary: document.getElementById("catalog-summary"),
   catalogHead: document.getElementById("catalog-head"),
   catalogBody: document.getElementById("catalog-body"),
+  dashboardLevelFilter: document.getElementById("dashboard-level-filter"),
+  dashboardFilterNote: document.getElementById("dashboard-filter-note"),
+  dashboardInsights: document.getElementById("dashboard-insights"),
+  dashboardSectionChart: document.getElementById("dashboard-section-chart"),
+  dashboardTeacherChart: document.getElementById("dashboard-teacher-chart"),
   viewSwitch: document.getElementById("view-switch"),
   scopeSelect: document.getElementById("scope-select"),
   validateButton: document.getElementById("validate-button"),
+  exportScopeNote: document.getElementById("export-scope-note"),
+  exportScopeSelect: document.getElementById("export-scope-select"),
+  exportSearchInput: document.getElementById("export-search-input"),
+  selectVisibleButton: document.getElementById("select-visible-button"),
+  clearExportSelectionButton: document.getElementById("clear-export-selection-button"),
+  exportSelectionPanel: document.getElementById("export-selection-panel"),
   exportCsvButton: document.getElementById("export-csv-button"),
   exportPdfButton: document.getElementById("export-pdf-button"),
+  printButton: document.getElementById("print-button"),
   autoScheduleButton: document.getElementById("auto-schedule-button"),
   heroAutoButton: document.getElementById("hero-auto-button"),
   groupPool: document.getElementById("group-pool"),
@@ -292,7 +338,18 @@ function setButtonBusy(button, busy, idleLabel, busyLabel) {
     return;
   }
   button.disabled = busy;
-  button.textContent = busy ? busyLabel : idleLabel;
+  const label = busy ? busyLabel : idleLabel;
+  button.innerHTML = button.dataset.icon ? buildButtonLabel(button.dataset.icon, label) : label;
+}
+
+function hydrateStaticButtonIcons() {
+  document.querySelectorAll("button[data-icon]").forEach((button) => {
+    if (button.dataset.iconHydrated === "true") {
+      return;
+    }
+    button.innerHTML = buildButtonLabel(button.dataset.icon, button.textContent.trim());
+    button.dataset.iconHydrated = "true";
+  });
 }
 
 function renderBusyState() {
@@ -303,6 +360,9 @@ function renderBusyState() {
   setButtonBusy(dom.refreshButton, isBusy("refresh"), "รีเฟรชข้อมูล", "กำลังรีเฟรช...");
   setButtonBusy(dom.addRecordButton, false, "เพิ่มรายการ", "เพิ่มรายการ");
   setButtonBusy(dom.validateButton, isBusy("validate"), "ตรวจสอบ", "กำลังตรวจสอบ...");
+  setButtonBusy(dom.exportCsvButton, isBusy("export-csv"), "ส่งออก CSV", "กำลังส่งออก...");
+  setButtonBusy(dom.exportPdfButton, isBusy("export-pdf"), "ส่งออก PDF", "กำลังส่งออก...");
+  setButtonBusy(dom.printButton, isBusy("print"), "พิมพ์", "กำลังเตรียมพิมพ์...");
   setButtonBusy(dom.autoScheduleButton, isBusy("auto-schedule"), "จัดวางอัตโนมัติ", "กำลังจัดตาราง...");
   setButtonBusy(dom.heroAutoButton, isBusy("auto-schedule"), "จัดตารางอัตโนมัติ", "กำลังจัดตาราง...");
   setButtonBusy(dom.saveSettingsButton, isBusy("save-settings"), "บันทึกการตั้งค่า", "กำลังบันทึก...");
@@ -314,10 +374,11 @@ function renderBusyState() {
 
   const modalSubmit = dom.modalForm.querySelector('button[type="submit"]');
   if (modalSubmit) {
-    const idleLabel = modalSubmit.dataset.idleLabel || modalSubmit.textContent;
+    const idleLabel = modalSubmit.dataset.idleLabel || modalSubmit.textContent.trim();
     modalSubmit.dataset.idleLabel = idleLabel;
     modalSubmit.disabled = isBusy("modal-submit");
-    modalSubmit.textContent = isBusy("modal-submit") ? "กำลังบันทึก..." : idleLabel;
+    const label = isBusy("modal-submit") ? "กำลังบันทึก..." : idleLabel;
+    modalSubmit.innerHTML = modalSubmit.dataset.icon ? buildButtonLabel(modalSubmit.dataset.icon, label) : label;
   }
 }
 
@@ -336,13 +397,18 @@ function handleUnauthorized() {
 
 function getLookup() {
   const data = state.data;
-  return {
+  if (state.lookupCache.data === data && state.lookupCache.value) {
+    return state.lookupCache.value;
+  }
+
+  const lookup = {
     teachers: data.teachers,
     rooms: data.rooms,
     subjects: data.subjects,
     sections: data.sections,
     enrollments: data.enrollments,
     instructionalGroups: data.instructionalGroups,
+    settings: data.settings,
     teacherMap: new Map(data.teachers.map((item) => [item.id, item])),
     roomMap: new Map(data.rooms.map((item) => [item.id, item])),
     subjectMap: new Map(data.subjects.map((item) => [item.id, item])),
@@ -350,6 +416,13 @@ function getLookup() {
     enrollmentMap: new Map(data.enrollments.map((item) => [item.id, item])),
     groupMap: new Map(data.instructionalGroups.map((item) => [item.id, item])),
   };
+
+  state.lookupCache = {
+    data,
+    value: lookup,
+  };
+
+  return lookup;
 }
 
 function currentScopeLabel() {
@@ -363,6 +436,74 @@ function currentScopeLabel() {
   return formatSectionLabel(lookup.sectionMap.get(state.scopeId));
 }
 
+function exportEntitiesForCurrentView() {
+  if (!state.data) {
+    return [];
+  }
+
+  return state.view === "teacher"
+    ? state.data.teachers.map((teacher) => ({ id: teacher.id, label: teacher.fullName }))
+    : state.data.sections.map((section) => ({ id: section.id, label: formatSectionLabel(section) }));
+}
+
+function visibleExportEntities() {
+  const normalizedSearch = state.exportSearch.trim().toLowerCase();
+  const entities = exportEntitiesForCurrentView();
+  return normalizedSearch
+    ? entities.filter((item) => item.label.toLowerCase().includes(normalizedSearch))
+    : entities;
+}
+
+function ensureExportSelection() {
+  const validIds = new Set(exportEntitiesForCurrentView().map((item) => item.id));
+  state.exportSelectionIds = state.exportSelectionIds.filter((id) => validIds.has(id));
+
+  if (state.exportScope === "selected" && state.exportSelectionIds.length === 0 && validIds.has(state.scopeId)) {
+    state.exportSelectionIds = [state.scopeId];
+  }
+}
+
+function exportScopeSummary() {
+  const currentLabel = currentScopeLabel();
+  if (state.exportScope === "all") {
+    return state.view === "teacher" ? "กำลังเตรียมครูทั้งหมด" : "กำลังเตรียมห้องเรียนทั้งหมด";
+  }
+
+  if (state.exportScope === "selected") {
+    const count = state.exportSelectionIds.length;
+    if (count === 0) {
+      return state.view === "teacher" ? "ยังไม่ได้เลือกครูสำหรับส่งออก" : "ยังไม่ได้เลือกห้องเรียนสำหรับส่งออก";
+    }
+    return state.view === "teacher"
+      ? `กำลังเตรียมครูที่เลือก ${count} คน`
+      : `กำลังเตรียมห้องเรียนที่เลือก ${count} ห้อง`;
+  }
+
+  return state.view === "teacher"
+    ? `กำลังเตรียมตารางของ ${currentLabel}`
+    : `กำลังเตรียมตารางของ ${currentLabel}`;
+}
+
+function currentExportParams() {
+  return {
+    view: state.view,
+    scope: state.exportScope,
+    entityId: state.scopeId,
+    entityIds: state.exportScope === "selected" ? state.exportSelectionIds : [],
+  };
+}
+
+function assertExportReady() {
+  const entities = exportEntitiesForCurrentView();
+  if (entities.length === 0) {
+    throw new Error(state.view === "teacher" ? "ยังไม่มีข้อมูลครูสำหรับส่งออกหรือพิมพ์" : "ยังไม่มีข้อมูลห้องเรียนสำหรับส่งออกหรือพิมพ์");
+  }
+
+  if (state.exportScope === "selected" && state.exportSelectionIds.length === 0) {
+    throw new Error(state.view === "teacher" ? "กรุณาเลือกครูอย่างน้อย 1 คน" : "กรุณาเลือกห้องเรียนอย่างน้อย 1 ห้อง");
+  }
+}
+
 function ensureScope() {
   if (!state.data) {
     return;
@@ -371,14 +512,15 @@ function ensureScope() {
   if (!source.some((item) => item.id === state.scopeId)) {
     state.scopeId = source[0]?.id || "";
   }
+  ensureExportSelection();
 }
 
-function decorateEntry(entry) {
-  const lookup = getLookup();
+function decorateEntry(entry, lookup = getLookup()) {
   const subject = lookup.subjectMap.get(entry.subjectId);
   const room = lookup.roomMap.get(entry.roomId);
   const group = lookup.groupMap.get(entry.instructionalGroupId);
   const section = lookup.sectionMap.get(entry.sectionId);
+  const colorTone = getSubjectColor(subject);
 
   return {
     ...entry,
@@ -391,27 +533,152 @@ function decorateEntry(entry) {
     }),
     sectionName: formatSectionLabel(section),
     deliveryModeLabel: group?.deliveryMode ? formatDeliveryMode(group.deliveryMode) : formatDeliveryMode(entry.deliveryMode),
-    colorTone: hashColor(entry.subjectId),
+    colorTone,
+    colorSoft: hexToRgba(colorTone, 0.16),
   };
 }
 
-function hashColor(value) {
-  let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = value.charCodeAt(index) + ((hash << 5) - hash);
+function hexToRgba(hex, alpha) {
+  const normalized = String(hex || "")
+    .replace("#", "")
+    .trim();
+
+  if (normalized.length !== 6) {
+    return `rgba(24, 116, 152, ${alpha})`;
   }
-  const palette = ["#187498", "#36AE7C", "#E36488", "#79B8D1", "#EB5353", "#F9D923", "#125C79"];
-  return palette[Math.abs(hash) % palette.length];
+
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
-function buildCurrentMatrix() {
+function getSubjectColor(subject) {
+  if (!subject) {
+    return DEFAULT_SUBJECT_COLOR;
+  }
+
+  if (subject.subjectKind === "DEVELOPMENT_ACTIVITY") {
+    return DEVELOPMENT_ACTIVITY_COLOR;
+  }
+
+  return SUBJECT_AREA_COLORS[subject.learningArea] || DEFAULT_SUBJECT_COLOR;
+}
+
+function decorateUnresolvedGroup(group, lookup = getLookup()) {
+  const enrollment = lookup.enrollmentMap.get(group.enrollmentId);
+  const subject = lookup.subjectMap.get(enrollment?.subjectId);
+  const colorTone = getSubjectColor(subject);
+
+  return {
+    ...group,
+    colorTone,
+    colorSoft: hexToRgba(colorTone, 0.18),
+  };
+}
+
+function dashboardLevelLabel(value) {
+  if (value === "PRIMARY") {
+    return "ระดับประถมศึกษา";
+  }
+  if (value === "LOWER_SECONDARY") {
+    return "ระดับมัธยมศึกษาตอนต้น";
+  }
+  return "ทุกระดับชั้น";
+}
+
+function filterSectionStatusesByLevel(statuses = []) {
+  if (!state.dashboardLevelFilter) {
+    return statuses;
+  }
+  return statuses.filter((item) => item.educationLevel === state.dashboardLevelFilter);
+}
+
+function buildDashboardSnapshot() {
+  const filteredStatuses = filterSectionStatusesByLevel(state.data?.sectionStatuses || []);
+  const sectionChartItems = [...filteredStatuses]
+    .sort((left, right) => left.completionRate - right.completionRate || left.label.localeCompare(right.label))
+    .slice(0, 6)
+    .map((item) => ({
+      label: item.label,
+      subtitle: item.educationLevelLabel,
+      assignedPeriods: item.assignedPeriods,
+      plannedPeriodsPerWeek: item.plannedPeriodsPerWeek,
+      completionRate: item.completionRate,
+      footnote: `${item.errorCount} ข้อผิดพลาด • ${item.warningCount} คำเตือน`,
+    }));
+
+  const rankedTeacherLoads = [...(state.data?.teacherLoads || [])]
+    .map((item) => ({
+      ...item,
+      loadPercent: Math.round(((item.current || 0) / Math.max(item.max || 1, 1)) * 100),
+      subtitle: (item.subjectNames || []).join(", ") || "ยังไม่ได้ผูกรายวิชา",
+      footnote: `${item.assignedGroups || 0} กลุ่มการสอน`,
+    }))
+    .sort((left, right) => right.loadPercent - left.loadPercent || right.current - left.current);
+
+  const teacherChartItems = rankedTeacherLoads.slice(0, 6);
+  const teacherFocusItems = rankedTeacherLoads
+    .filter((item) => item.loadPercent >= 85 || item.assignedGroups > 0)
+    .slice(0, 4);
+
+  return {
+    filteredStatuses,
+    sectionChartItems,
+    teacherChartItems,
+    teacherFocusItems: teacherFocusItems.length ? teacherFocusItems : rankedTeacherLoads.slice(0, 3),
+    filteredLabel: dashboardLevelLabel(state.dashboardLevelFilter),
+  };
+}
+
+function buildAssetPreviewMarkup(src, alt, emptyText) {
+  if (!src) {
+    return `<span class="asset-preview-empty">${escapeHtml(emptyText)}</span>`;
+  }
+  return `<img class="asset-preview-image" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("ไม่สามารถอ่านไฟล์รูปภาพได้"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function applySettingsAsset(input) {
+  const file = input.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  const hiddenName = input.dataset.hiddenName;
+  const previewId = input.dataset.previewId;
+  if (!hiddenName || !previewId) {
+    return;
+  }
+
+  const hiddenInput = dom.settingsForm.querySelector(`[name="${hiddenName}"]`);
+  const previewRoot = document.getElementById(previewId);
+  if (!hiddenInput || !previewRoot) {
+    return;
+  }
+
+  const dataUrl = await readFileAsDataUrl(file);
+  hiddenInput.value = dataUrl;
+  previewRoot.innerHTML = buildAssetPreviewMarkup(dataUrl, file.name, "ยังไม่ได้อัปโหลดรูปภาพ");
+  state.settingsDirty = true;
+}
+
+function buildCurrentMatrix(lookup = getLookup()) {
   const entries = state.data.timetable.entries
     .filter((entry) =>
       state.view === "teacher"
         ? entry.teachers.some((teacher) => teacher.teacherId === state.scopeId)
         : entry.sectionId === state.scopeId,
     )
-    .map(decorateEntry);
+    .map((entry) => decorateEntry(entry, lookup));
 
   const matrix = Array.from({ length: 6 }, () => Array.from({ length: 5 }, () => []));
   for (const entry of entries) {
@@ -423,19 +690,22 @@ function buildCurrentMatrix() {
   return matrix;
 }
 
-function unresolvedForCurrentScope() {
-  const lookup = getLookup();
+function unresolvedForCurrentScope(lookup = getLookup()) {
   if (state.view === "teacher") {
-    return state.data.unresolvedGroups.filter((item) => {
-      const group = lookup.groupMap.get(item.groupId);
-      return group?.teachers.some((assignment) => assignment.teacherId === state.scopeId);
-    });
+    return state.data.unresolvedGroups
+      .filter((item) => {
+        const group = lookup.groupMap.get(item.groupId);
+        return group?.teachers.some((assignment) => assignment.teacherId === state.scopeId);
+      })
+      .map((item) => decorateUnresolvedGroup(item, lookup));
   }
 
-  return state.data.unresolvedGroups.filter((item) => {
-    const enrollment = lookup.enrollmentMap.get(item.enrollmentId);
-    return enrollment?.sectionId === state.scopeId;
-  });
+  return state.data.unresolvedGroups
+    .filter((item) => {
+      const enrollment = lookup.enrollmentMap.get(item.enrollmentId);
+      return enrollment?.sectionId === state.scopeId;
+    })
+    .map((item) => decorateUnresolvedGroup(item, lookup));
 }
 
 function renderAppVisibility() {
@@ -508,30 +778,86 @@ function renderWorkspaceData() {
 
   dom.workspaceState.classList.add("hidden");
   const lookup = getLookup();
+  const dashboardSnapshot = buildDashboardSnapshot();
 
   renderNav(dom.nav, state.screen);
   renderStatusList(dom.systemStatus, state.data.validation);
   renderMetrics(dom.metricsGrid, state.data.dashboard);
-  renderSectionStatuses(dom.sectionStatuses, state.data.sectionStatuses);
+  dom.dashboardLevelFilter.value = state.dashboardLevelFilter;
+  renderDashboardInsights(dom.dashboardInsights, {
+    completionRate: state.data.dashboard.completionRate,
+    assignedPeriods: state.data.dashboard.assignedPeriods,
+    requiredPeriods: state.data.dashboard.requiredPeriods,
+    unresolvedCount: state.data.unresolvedGroups.length,
+    alertCount: state.data.dashboard.alerts.length,
+    activeUsers: state.data.activity?.activeUsers?.length || 0,
+    filteredLabel: dashboardSnapshot.filteredLabel,
+  });
+  renderDashboardBars(dom.dashboardSectionChart, dashboardSnapshot.sectionChartItems, {
+    valueKey: "completionRate",
+    currentKey: "assignedPeriods",
+    totalKey: "plannedPeriodsPerWeek",
+    emptyTitle: "ยังไม่มีชั้นเรียนในตัวกรองนี้",
+    emptyBody: "ลองเปลี่ยนตัวกรองระดับชั้นหรือเพิ่มข้อมูลชั้นเรียนก่อนดูกราฟ",
+  });
+  renderSectionStatuses(dom.sectionStatuses, dashboardSnapshot.filteredStatuses);
   renderAlertFeed(dom.alertFeed, state.data.dashboard.alerts);
-  renderTeacherLoads(dom.teacherLoads, state.data.teacherLoads);
+  renderDashboardBars(dom.dashboardTeacherChart, dashboardSnapshot.teacherChartItems, {
+    valueKey: "loadPercent",
+    currentKey: "current",
+    totalKey: "max",
+    labelKey: "name",
+    emptyTitle: "ยังไม่มีข้อมูลภาระสอน",
+    emptyBody: "เพิ่มครูและคาบที่จัดแล้วเพื่อให้กราฟโหลดครูเริ่มทำงาน",
+    mode: "load",
+  });
+  renderTeacherLoads(dom.teacherLoads, dashboardSnapshot.teacherFocusItems);
+  dom.dashboardFilterNote.textContent = `กำลังแสดงภาพรวม${dashboardSnapshot.filteredLabel}`;
 
   renderCatalogOptions(dom.catalogType, state.catalogType);
+  renderCatalogFilterOptions(dom.catalogFilter, state.catalogType, state.data[state.catalogType], state.catalogFilter);
   renderCatalogHead(dom.catalogHead, state.catalogType);
-  renderCatalogBody(dom.catalogBody, state.catalogType, state.data[state.catalogType], lookup, state.catalogSearch);
-  dom.catalogSummary.textContent = `ทั้งหมด ${state.data[state.catalogType].length} รายการ`;
+  const filteredCatalogCount = renderCatalogBody(
+    dom.catalogBody,
+    state.catalogType,
+    state.data[state.catalogType],
+    lookup,
+    state.catalogSearch,
+    state.catalogFilter,
+  );
+  dom.catalogSummary.textContent = `ทั้งหมด ${state.data[state.catalogType].length} รายการ • แสดง ${filteredCatalogCount} รายการ`;
 
   renderViewSwitch(dom.viewSwitch, state.view);
   renderScopeSelect(dom.scopeSelect, state, state.data);
+  renderExportScopeSelect(dom.exportScopeSelect, state.view, state.exportScope);
+  dom.exportScopeNote.textContent = exportScopeSummary();
+  dom.exportSearchInput.value = state.exportSearch;
+  renderExportSelectionPanel(dom.exportSelectionPanel, {
+    view: state.view,
+    mode: state.exportScope,
+    entities: exportEntitiesForCurrentView(),
+    selectedIds: state.exportSelectionIds,
+    searchText: state.exportSearch,
+  });
+  const selectionMode = state.exportScope === "selected";
+  dom.exportSearchInput.hidden = !selectionMode;
+  dom.selectVisibleButton.hidden = !selectionMode;
+  dom.clearExportSelectionButton.hidden = !selectionMode;
+  dom.exportSearchInput.disabled = !selectionMode;
+  dom.selectVisibleButton.disabled = !selectionMode;
+  dom.clearExportSelectionButton.disabled = !selectionMode;
   renderBoardHead(dom.boardHead);
-  renderBoardGrid(dom.boardGrid, buildCurrentMatrix());
-  renderGroupPool(dom.groupPool, unresolvedForCurrentScope(), state.selectedGroupId);
+  renderBoardGrid(dom.boardGrid, buildCurrentMatrix(lookup));
+  renderGroupPool(dom.groupPool, unresolvedForCurrentScope(lookup), state.selectedGroupId);
   renderSuggestions(dom.suggestionList, state.suggestions);
   renderPresence(dom.presenceList, state.data.activity);
   renderLocks(dom.lockList, state.data.activity);
   renderActivity(dom.activityList, state.data.activity);
   renderValidation(dom.validationList, state.data.validation);
-  renderSettingsForm(dom.settingsForm, state.data.settings);
+  if (!state.settingsDirty || !dom.settingsForm.childElementCount) {
+    renderSettingsForm(dom.settingsForm, state.data.settings);
+    state.settingsDirty = false;
+  }
 
   document.querySelectorAll(".screen").forEach((screen) => {
     screen.classList.toggle("hidden", screen.dataset.screen !== state.screen);
@@ -604,11 +930,30 @@ async function refreshDataWithPresence(options = {}) {
   }
 }
 
+async function refreshLiveActivity() {
+  if (state.auth.status !== "signed_in" || !state.data || document.hidden) {
+    return;
+  }
+
+  const currentVersion = state.data.timetable?.version;
+  const activity = await getActivity();
+  state.data.activity = activity;
+
+  if (typeof currentVersion === "number" && activity.version !== currentVersion) {
+    await loadData({ background: true });
+    return;
+  }
+
+  renderWorkspaceHeader();
+  if (state.screen === "timetable") {
+    renderPresence(dom.presenceList, state.data.activity);
+    renderLocks(dom.lockList, state.data.activity);
+    renderActivity(dom.activityList, state.data.activity);
+  }
+}
+
 function currentScopeParams() {
-  return {
-    view: state.view,
-    entityId: state.scopeId,
-  };
+  return currentExportParams();
 }
 
 async function claimResourcesForPatch(patch) {
@@ -710,6 +1055,7 @@ function extractSettingsPayload() {
     signatories: [0, 1, 2].map((index) => ({
       title: formData.get(`signatoryTitle${index}`),
       name: formData.get(`signatoryName${index}`),
+      signatureImage: formData.get(`signatorySignatureImage${index}`),
     })),
   };
 }
@@ -717,9 +1063,9 @@ function extractSettingsPayload() {
 function resourceTitle(resource) {
   const labels = {
     teachers: "ครู",
-    rooms: "ห้องเรียน",
+    rooms: "ห้อง/สถานที่",
     subjects: "รายวิชา",
-    sections: "ห้องเรียน",
+    sections: "ชั้นเรียน",
     enrollments: "แผนรายวิชา",
     instructionalGroups: "กลุ่มการสอน",
   };
@@ -734,12 +1080,7 @@ function openModal(resource, recordId = "") {
   dom.modalTitle.textContent = recordId ? `แก้ไข${resourceTitle(resource)}` : `เพิ่ม${resourceTitle(resource)}`;
   dom.modalForm.innerHTML = buildModalForm(resource, record || {}, lookup);
   dom.modal.classList.remove("hidden");
-
-  if (resource === "teachers" && record?.subjectIds?.length) {
-    [...dom.modalForm.querySelector('select[name="subjectIds"]').options].forEach((option) => {
-      option.selected = record.subjectIds.includes(option.value);
-    });
-  }
+  syncModalHelpers(resource);
 
   renderBusyState();
 }
@@ -757,11 +1098,8 @@ function collectModalPayload(resource) {
       teacherCode: formData.get("teacherCode"),
       fullName: formData.get("fullName"),
       maxPeriodsPerWeek: Number(formData.get("maxPeriodsPerWeek")),
-      roles: String(formData.get("rolesText") || "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      subjectIds: [...dom.modalForm.querySelector('select[name="subjectIds"]').selectedOptions].map((option) => option.value),
+      roles: [...dom.modalForm.querySelectorAll('input[name="roles"]:checked')].map((input) => input.value),
+      subjectIds: [...dom.modalForm.querySelectorAll('input[name="subjectIds"]:checked')].map((input) => input.value),
     };
   }
 
@@ -778,16 +1116,19 @@ function collectModalPayload(resource) {
     return {
       subjectCode: formData.get("subjectCode"),
       name: formData.get("name"),
+      subjectKind: formData.get("subjectKind"),
+      subjectType: formData.get("subjectType"),
       credits: Number(formData.get("credits")),
       weeklyPeriods: Number(formData.get("weeklyPeriods")),
       learningArea: formData.get("learningArea"),
+      activityCategory: formData.get("activityCategory"),
     };
   }
 
   if (resource === "sections") {
     return {
       educationLevel: formData.get("educationLevel"),
-      grade: Number(formData.get("grade")),
+      grade: String(formData.get("grade") || "").trim(),
       roomName: formData.get("roomName"),
       plannedPeriodsPerWeek: Number(formData.get("plannedPeriodsPerWeek")),
       academicYear: formData.get("academicYear"),
@@ -854,6 +1195,44 @@ function addAssignmentRow() {
   );
 }
 
+function setSectionGradeOptions(level, selectedValue = "") {
+  const gradeSelect = dom.modalForm.querySelector('select[name="grade"]');
+  if (!gradeSelect) {
+    return;
+  }
+
+  const options = SECTION_GRADE_OPTIONS[level] || SECTION_GRADE_OPTIONS.PRIMARY;
+  const fallbackValue = String(selectedValue || gradeSelect.value || options[0]?.value || "1");
+  gradeSelect.innerHTML = options
+    .map((option) => `<option value="${escapeHtml(option.value)}" ${option.value === fallbackValue ? "selected" : ""}>${escapeHtml(option.label)}</option>`)
+    .join("");
+
+  if (!options.some((option) => option.value === gradeSelect.value)) {
+    gradeSelect.value = options[0]?.value || "1";
+  }
+}
+
+function updateSectionPreview() {
+  const preview = dom.modalForm.querySelector("#section-preview");
+  if (!preview) {
+    return;
+  }
+
+  const educationLevel = dom.modalForm.querySelector('select[name="educationLevel"]')?.value || "PRIMARY";
+  const grade = dom.modalForm.querySelector('select[name="grade"]')?.value || "1";
+  const roomName = dom.modalForm.querySelector('input[name="roomName"]')?.value.trim() || "?";
+  preview.textContent = formatSectionLabel({ educationLevel, grade, roomName });
+}
+
+function syncModalHelpers(resource = state.modal.resource) {
+  if (resource === "sections") {
+    const educationLevel = dom.modalForm.querySelector('select[name="educationLevel"]')?.value || "PRIMARY";
+    const grade = dom.modalForm.querySelector('select[name="grade"]')?.value || "1";
+    setSectionGradeOptions(educationLevel, grade);
+    updateSectionPreview();
+  }
+}
+
 function reindexAssignmentRows() {
   dom.modalForm.querySelectorAll(".assignment-row").forEach((row, index) => {
     row.dataset.assignmentIndex = String(index);
@@ -871,7 +1250,7 @@ function stopHeartbeat() {
 function startHeartbeat() {
   stopHeartbeat();
   heartbeatTimer = window.setInterval(async () => {
-    if (state.auth.status !== "signed_in" || !state.data) {
+    if (state.auth.status !== "signed_in" || !state.data || document.hidden) {
       return;
     }
 
@@ -883,7 +1262,7 @@ function startHeartbeat() {
         selectedSectionId: state.view === "section" ? state.scopeId : "",
         selectedTeacherId: state.view === "teacher" ? state.scopeId : "",
       });
-      await loadData({ background: true });
+      await refreshLiveActivity();
     } catch (error) {
       console.error(error);
     }
@@ -898,11 +1277,13 @@ async function handleAuthChange(user) {
     stopHeartbeat();
     state.auth.status = "signed_out";
     state.data = null;
+    state.lookupCache = { data: null, value: null };
     state.dataState = "idle";
     state.dataError = "";
     state.lastSyncedAt = "";
     state.selectedGroupId = "";
     state.suggestions = [];
+    state.settingsDirty = false;
     render();
     return;
   }
@@ -925,6 +1306,16 @@ function bindEvents() {
         console.error(error);
       }
     }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      refreshDataWithPresence({ background: true }).catch((error) => console.error(error));
+    }
+  });
+
+  window.addEventListener("focus", () => {
+    refreshDataWithPresence({ background: true }).catch((error) => console.error(error));
   });
 
   dom.googleSigninButton.addEventListener("click", () =>
@@ -1003,11 +1394,22 @@ function bindEvents() {
 
   dom.catalogType.addEventListener("change", () => {
     state.catalogType = dom.catalogType.value;
+    state.catalogFilter = "";
+    render();
+  });
+
+  dom.catalogFilter.addEventListener("change", () => {
+    state.catalogFilter = dom.catalogFilter.value;
     render();
   });
 
   dom.catalogSearch.addEventListener("input", () => {
     state.catalogSearch = dom.catalogSearch.value.trim();
+    render();
+  });
+
+  dom.dashboardLevelFilter.addEventListener("change", () => {
+    state.dashboardLevelFilter = dom.dashboardLevelFilter.value;
     render();
   });
 
@@ -1033,6 +1435,51 @@ function bindEvents() {
       removeButton.closest(".assignment-row")?.remove();
       reindexAssignmentRows();
     }
+  });
+  dom.modalForm.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (state.modal.resource === "sections" && target.matches('select[name="educationLevel"]')) {
+      setSectionGradeOptions(target.value);
+      updateSectionPreview();
+      return;
+    }
+
+    if (state.modal.resource === "sections" && target.matches('select[name="grade"], input[name="roomName"]')) {
+      updateSectionPreview();
+    }
+  });
+  dom.modalForm.addEventListener("input", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (state.modal.resource === "sections" && target.matches('input[name="roomName"]')) {
+      updateSectionPreview();
+    }
+  });
+
+  dom.settingsForm.addEventListener("input", () => {
+    state.settingsDirty = true;
+  });
+
+  dom.settingsForm.addEventListener("change", async (event) => {
+    const target = event.target;
+    if (target instanceof HTMLInputElement && target.type === "file") {
+      try {
+        await applySettingsAsset(target);
+      } catch (error) {
+        console.error(error);
+        showToast(error.message || "ไม่สามารถอัปโหลดรูปภาพได้", "error");
+      }
+      return;
+    }
+
+    state.settingsDirty = true;
   });
 
   dom.catalogBody.addEventListener("click", async (event) => {
@@ -1070,6 +1517,7 @@ function bindEvents() {
     }
 
     state.view = button.dataset.view;
+    state.exportSearch = "";
     ensureScope();
     state.selectedGroupId = "";
     state.suggestions = [];
@@ -1079,10 +1527,50 @@ function bindEvents() {
 
   dom.scopeSelect.addEventListener("change", async () => {
     state.scopeId = dom.scopeSelect.value;
+    ensureExportSelection();
     state.selectedGroupId = "";
     state.suggestions = [];
     render();
     await syncProfile().catch((error) => console.error(error));
+  });
+
+  dom.exportScopeSelect.addEventListener("change", () => {
+    state.exportScope = dom.exportScopeSelect.value || "current";
+    ensureExportSelection();
+    render();
+  });
+
+  dom.exportSearchInput.addEventListener("input", () => {
+    state.exportSearch = dom.exportSearchInput.value;
+    render();
+  });
+
+  dom.selectVisibleButton.addEventListener("click", () => {
+    const nextIds = new Set(state.exportSelectionIds);
+    visibleExportEntities().forEach((item) => nextIds.add(item.id));
+    state.exportSelectionIds = [...nextIds];
+    render();
+  });
+
+  dom.clearExportSelectionButton.addEventListener("click", () => {
+    state.exportSelectionIds = [];
+    render();
+  });
+
+  dom.exportSelectionPanel.addEventListener("change", (event) => {
+    const checkbox = event.target.closest("[data-export-select]");
+    if (!checkbox) {
+      return;
+    }
+
+    const nextIds = new Set(state.exportSelectionIds);
+    if (checkbox.checked) {
+      nextIds.add(checkbox.dataset.exportSelect);
+    } else {
+      nextIds.delete(checkbox.dataset.exportSelect);
+    }
+    state.exportSelectionIds = [...nextIds];
+    render();
   });
 
   dom.autoScheduleButton.addEventListener("click", () =>
@@ -1130,15 +1618,41 @@ function bindEvents() {
       },
     ));
 
-  dom.exportCsvButton.addEventListener("click", () => {
-    const params = currentScopeParams();
-    exportCsv(params.view, params.entityId);
-  });
+  dom.exportCsvButton.addEventListener("click", () =>
+    runAction(
+      "export-csv",
+      async () => {
+        assertExportReady();
+        await exportCsv(currentExportParams());
+      },
+      {
+        successMessage: "ส่งออก CSV เรียบร้อยแล้ว",
+      },
+    ));
 
-  dom.exportPdfButton.addEventListener("click", () => {
-    const params = currentScopeParams();
-    exportPdf(params.view, params.entityId);
-  });
+  dom.exportPdfButton.addEventListener("click", () =>
+    runAction(
+      "export-pdf",
+      async () => {
+        assertExportReady();
+        await exportPdf(currentExportParams());
+      },
+      {
+        successMessage: "ส่งออก PDF เรียบร้อยแล้ว",
+      },
+    ));
+
+  dom.printButton.addEventListener("click", () =>
+    runAction(
+      "print",
+      async () => {
+        assertExportReady();
+        await printTimetable(currentExportParams());
+      },
+      {
+        successMessage: "เปิดเอกสารสำหรับพิมพ์เรียบร้อยแล้ว",
+      },
+    ));
 
   dom.groupPool.addEventListener("click", async (event) => {
     const card = event.target.closest("[data-group-id]");
@@ -1251,6 +1765,7 @@ function bindEvents() {
       "save-settings",
       async () => {
         await saveSettings(extractSettingsPayload());
+        state.settingsDirty = false;
         await loadData({ background: true });
       },
       {
@@ -1265,6 +1780,7 @@ function bindEvents() {
 
 async function init() {
   bindEvents();
+  hydrateStaticButtonIcons();
   render();
 
   if (!state.auth.config.ready) {
