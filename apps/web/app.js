@@ -29,7 +29,9 @@ import {
   SCREEN_META,
   buildAssignmentRowHtml,
   buildModalForm,
+  formatDeliveryMode,
   formatSectionLabel,
+  formatTeachingRole,
   renderActivity,
   renderAlertFeed,
   renderBoardGrid,
@@ -182,7 +184,7 @@ function getDisplayNameStorageKey(uid) {
 
 function hydrateUserProfile(user) {
   const storedName = localStorage.getItem(getDisplayNameStorageKey(user.uid));
-  const fallbackName = user.displayName || user.email?.split("@")[0] || "TeachTable User";
+  const fallbackName = user.displayName || user.email?.split("@")[0] || "ผู้ใช้ TeachTable";
   state.userProfile = {
     userId: user.uid,
     displayName: storedName || fallbackName,
@@ -209,24 +211,35 @@ function clearAuthError() {
   setAuthError("");
 }
 
+function formatTimeLabel(value) {
+  return new Date(value).toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function formatSyncTime(value) {
   if (!value) {
-    return "Waiting for first sync";
+    return "รอการซิงก์ครั้งแรก";
   }
-  return `Last synced ${new Date(value).toLocaleTimeString("en-US")}`;
+  return `ซิงก์ล่าสุด ${formatTimeLabel(value)}`;
 }
 
 function humanizeProvider(provider) {
   if (!provider) {
-    return "Logged in";
+    return "เข้าสู่ระบบแล้ว";
   }
   if (provider === "google.com") {
-    return "Logged in with Google";
+    return "เข้าสู่ระบบด้วย Google";
   }
   if (provider === "password") {
-    return "Logged in with email";
+    return "เข้าสู่ระบบด้วยอีเมล";
   }
-  return `Logged in via ${provider}`;
+  return `เข้าสู่ระบบผ่าน ${provider}`;
+}
+
+function currentViewLabel() {
+  return state.view === "teacher" ? "มุมมองครู" : "มุมมองห้องเรียน";
 }
 
 function showToast(message, tone = "success") {
@@ -267,7 +280,7 @@ async function runAction(key, action, options = {}) {
     if (typeof options.onError === "function") {
       options.onError(error);
     }
-    showToast(options.errorMessage || error.message || "Something went wrong.", "error");
+    showToast(options.errorMessage || error.message || "เกิดข้อผิดพลาดบางอย่าง", "error");
     return null;
   } finally {
     toggleBusy(key, false);
@@ -283,16 +296,16 @@ function setButtonBusy(button, busy, idleLabel, busyLabel) {
 }
 
 function renderBusyState() {
-  setButtonBusy(dom.googleSigninButton, isBusy("auth-google"), "Continue with Google", "Opening Google...");
-  setButtonBusy(dom.emailLoginButton, isBusy("auth-email"), "Sign in with email", "Signing in...");
-  setButtonBusy(dom.saveProfileButton, isBusy("save-profile"), "Save name", "Saving...");
-  setButtonBusy(dom.signoutButton, isBusy("sign-out"), "Sign out", "Signing out...");
-  setButtonBusy(dom.refreshButton, isBusy("refresh"), "Refresh data", "Refreshing...");
-  setButtonBusy(dom.addRecordButton, false, "Add record", "Add record");
-  setButtonBusy(dom.validateButton, isBusy("validate"), "Validate", "Validating...");
-  setButtonBusy(dom.autoScheduleButton, isBusy("auto-schedule"), "Auto place", "Scheduling...");
-  setButtonBusy(dom.heroAutoButton, isBusy("auto-schedule"), "Run auto scheduling", "Scheduling...");
-  setButtonBusy(dom.saveSettingsButton, isBusy("save-settings"), "Save settings", "Saving...");
+  setButtonBusy(dom.googleSigninButton, isBusy("auth-google"), "เข้าสู่ระบบด้วย Google", "กำลังเปิด Google...");
+  setButtonBusy(dom.emailLoginButton, isBusy("auth-email"), "เข้าสู่ระบบด้วยอีเมล", "กำลังเข้าสู่ระบบ...");
+  setButtonBusy(dom.saveProfileButton, isBusy("save-profile"), "บันทึกชื่อ", "กำลังบันทึก...");
+  setButtonBusy(dom.signoutButton, isBusy("sign-out"), "ออกจากระบบ", "กำลังออกจากระบบ...");
+  setButtonBusy(dom.refreshButton, isBusy("refresh"), "รีเฟรชข้อมูล", "กำลังรีเฟรช...");
+  setButtonBusy(dom.addRecordButton, false, "เพิ่มรายการ", "เพิ่มรายการ");
+  setButtonBusy(dom.validateButton, isBusy("validate"), "ตรวจสอบ", "กำลังตรวจสอบ...");
+  setButtonBusy(dom.autoScheduleButton, isBusy("auto-schedule"), "จัดวางอัตโนมัติ", "กำลังจัดตาราง...");
+  setButtonBusy(dom.heroAutoButton, isBusy("auto-schedule"), "จัดตารางอัตโนมัติ", "กำลังจัดตาราง...");
+  setButtonBusy(dom.saveSettingsButton, isBusy("save-settings"), "บันทึกการตั้งค่า", "กำลังบันทึก...");
 
   if (!state.auth.config.ready) {
     dom.googleSigninButton.disabled = true;
@@ -304,7 +317,7 @@ function renderBusyState() {
     const idleLabel = modalSubmit.dataset.idleLabel || modalSubmit.textContent;
     modalSubmit.dataset.idleLabel = idleLabel;
     modalSubmit.disabled = isBusy("modal-submit");
-    modalSubmit.textContent = isBusy("modal-submit") ? "Saving..." : idleLabel;
+    modalSubmit.textContent = isBusy("modal-submit") ? "กำลังบันทึก..." : idleLabel;
   }
 }
 
@@ -313,7 +326,7 @@ function handleUnauthorized() {
     return;
   }
   unauthorizedHandled = true;
-  showToast("Your session expired. Please sign in again.", "error");
+  showToast("เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง", "error");
   signOutUser()
     .catch(() => undefined)
     .finally(() => {
@@ -374,10 +387,10 @@ function decorateEntry(entry) {
     roomName: room?.name || entry.roomId,
     teacherLabels: entry.teachers.map((assignment) => {
       const teacher = lookup.teacherMap.get(assignment.teacherId);
-      return `${teacher?.fullName || assignment.teacherId} (${assignment.teachingRole})`;
+      return `${teacher?.fullName || assignment.teacherId} (${formatTeachingRole(assignment.teachingRole)})`;
     }),
     sectionName: formatSectionLabel(section),
-    deliveryModeLabel: group?.deliveryMode || entry.deliveryMode,
+    deliveryModeLabel: group?.deliveryMode ? formatDeliveryMode(group.deliveryMode) : formatDeliveryMode(entry.deliveryMode),
     colorTone: hashColor(entry.subjectId),
   };
 }
@@ -433,14 +446,14 @@ function renderAppVisibility() {
 
 function renderAuthState() {
   if (!state.auth.config.ready) {
-    dom.authStatusChip.textContent = "Firebase configuration required";
-    setAuthError(`Missing Firebase config: ${state.auth.config.missingKeys.join(", ")}`);
+    dom.authStatusChip.textContent = "ต้องตั้งค่า Firebase";
+    setAuthError(`ยังตั้งค่า Firebase ไม่ครบ: ${state.auth.config.missingKeys.join(", ")}`);
     dom.googleSigninButton.disabled = true;
     dom.emailLoginButton.disabled = true;
     return;
   }
 
-  dom.authStatusChip.textContent = "Authentication required";
+  dom.authStatusChip.textContent = "ต้องยืนยันตัวตน";
   dom.googleSigninButton.disabled = false;
   dom.emailLoginButton.disabled = false;
 }
@@ -452,24 +465,24 @@ function renderWorkspaceHeader() {
   const collaboratorCount = state.data?.activity?.activeUsers?.length || 0;
 
   dom.schoolCaption.textContent = settings
-    ? `${settings.schoolName} · Term ${settings.term}/${settings.academicYear}`
+    ? `${settings.schoolName} • ภาคเรียน ${settings.term}/${settings.academicYear}`
     : "TeachTable";
 
   dom.pageTitle.textContent = state.screen === "timetable" && state.data
-    ? `${meta.title} · ${currentScopeLabel()}`
+    ? `${meta.title} • ${currentScopeLabel()}`
     : meta.title;
 
   dom.pageDescription.textContent = state.screen === "timetable" && state.data
-    ? `${meta.description} You are viewing ${state.view} mode for ${currentScopeLabel()}.`
+    ? `${meta.description} ตอนนี้คุณกำลังดู${currentViewLabel()} ของ ${currentScopeLabel()}`
     : meta.description;
 
-  dom.userName.textContent = state.userProfile.displayName || "TeachTable User";
-  dom.userEmail.textContent = state.auth.user?.email || "Authenticated user";
+  dom.userName.textContent = state.userProfile.displayName || "ผู้ใช้ TeachTable";
+  dom.userEmail.textContent = state.auth.user?.email || "ผู้ใช้ที่ยืนยันตัวตนแล้ว";
   dom.userAvatar.textContent = getInitials(state.userProfile.displayName || state.auth.user?.email || "TT");
   dom.accountStatus.textContent = humanizeProvider(provider);
   dom.livePill.textContent = collaboratorCount > 0
-    ? `${collaboratorCount} collaborator${collaboratorCount > 1 ? "s" : ""} online`
-    : "You are the only active user";
+    ? `ออนไลน์ ${collaboratorCount} คน`
+    : "คุณกำลังใช้งานอยู่เพียงคนเดียว";
   dom.syncNote.textContent = formatSyncTime(state.lastSyncedAt);
 }
 
@@ -479,14 +492,14 @@ function renderWorkspaceData() {
     if (state.dataState === "error") {
       renderWorkspaceState(dom.workspaceState, {
         tone: "critical",
-        title: "Unable to load the workspace",
-        body: state.dataError || "TeachTable could not load the protected data for this session.",
+        title: "ไม่สามารถโหลดพื้นที่ทำงานได้",
+        body: state.dataError || "TeachTable ไม่สามารถโหลดข้อมูลที่ป้องกันไว้สำหรับเซสชันนี้ได้",
       });
     } else {
       renderWorkspaceState(dom.workspaceState, {
         tone: "info",
-        title: "Loading secure workspace",
-        body: "TeachTable is pulling the latest timetable snapshot for your authenticated session.",
+        title: "กำลังโหลดพื้นที่ทำงานที่ปลอดภัย",
+        body: "TeachTable กำลังดึงข้อมูลตารางสอนล่าสุดสำหรับบัญชีที่ยืนยันตัวตนแล้ว",
       });
     }
     document.querySelectorAll(".screen").forEach((screen) => screen.classList.add("hidden"));
@@ -506,7 +519,7 @@ function renderWorkspaceData() {
   renderCatalogOptions(dom.catalogType, state.catalogType);
   renderCatalogHead(dom.catalogHead, state.catalogType);
   renderCatalogBody(dom.catalogBody, state.catalogType, state.data[state.catalogType], lookup, state.catalogSearch);
-  dom.catalogSummary.textContent = `${state.data[state.catalogType].length} total records`;
+  dom.catalogSummary.textContent = `ทั้งหมด ${state.data[state.catalogType].length} รายการ`;
 
   renderViewSwitch(dom.viewSwitch, state.view);
   renderScopeSelect(dom.scopeSelect, state, state.data);
@@ -529,7 +542,7 @@ function render() {
   renderAppVisibility();
 
   if (state.auth.status === "loading") {
-    dom.bootStatus.textContent = state.auth.error || "Checking authentication and loading the latest school data.";
+    dom.bootStatus.textContent = state.auth.error || "กำลังตรวจสอบสิทธิ์การเข้าใช้และโหลดข้อมูลล่าสุดของสถานศึกษา";
     return;
   }
 
@@ -564,7 +577,7 @@ async function loadData(options = {}) {
     render();
   } catch (error) {
     state.dataState = "error";
-    state.dataError = error.message || "TeachTable could not load the latest data.";
+    state.dataError = error.message || "TeachTable ไม่สามารถโหลดข้อมูลล่าสุดได้";
     render();
     throw error;
   }
@@ -616,7 +629,7 @@ async function claimResourcesForPatch(patch) {
       period: patch.period,
     });
     if (!result.ok) {
-      throw new Error(result.reason || "A lock could not be created for this change.");
+      throw new Error(result.reason || "ไม่สามารถสร้าง lock สำหรับการแก้ไขครั้งนี้ได้");
     }
     if (result.lock?.id) {
       lockIds.push(result.lock.id);
@@ -661,7 +674,7 @@ async function commitPatch(patch) {
       patches: [patch],
     });
     if (!result.ok) {
-      throw new Error(result.staleReason || "The timetable change could not be saved.");
+      throw new Error(result.staleReason || "ไม่สามารถบันทึกการเปลี่ยนแปลงตารางสอนได้");
     }
   } finally {
     await Promise.all(lockIds.map((lockId) => releaseLock(lockId).catch(() => undefined)));
@@ -703,14 +716,14 @@ function extractSettingsPayload() {
 
 function resourceTitle(resource) {
   const labels = {
-    teachers: "Teacher",
-    rooms: "Room",
-    subjects: "Subject",
-    sections: "Section",
-    enrollments: "Enrollment",
-    instructionalGroups: "Instructional group",
+    teachers: "ครู",
+    rooms: "ห้องเรียน",
+    subjects: "รายวิชา",
+    sections: "ห้องเรียน",
+    enrollments: "แผนรายวิชา",
+    instructionalGroups: "กลุ่มการสอน",
   };
-  return labels[resource] || "Record";
+  return labels[resource] || "รายการ";
 }
 
 function openModal(resource, recordId = "") {
@@ -718,7 +731,7 @@ function openModal(resource, recordId = "") {
   const lookup = getLookup();
   const record = recordId ? state.data[resource].find((item) => item.id === recordId) : {};
   dom.modalCaption.textContent = resourceTitle(resource);
-  dom.modalTitle.textContent = recordId ? `Edit ${resourceTitle(resource).toLowerCase()}` : `Add ${resourceTitle(resource).toLowerCase()}`;
+  dom.modalTitle.textContent = recordId ? `แก้ไข${resourceTitle(resource)}` : `เพิ่ม${resourceTitle(resource)}`;
   dom.modalForm.innerHTML = buildModalForm(resource, record || {}, lookup);
   dom.modal.classList.remove("hidden");
 
@@ -823,7 +836,7 @@ async function onModalSubmit(event) {
       await refreshDataWithPresence({ background: true });
     },
     {
-      successMessage: `${resourceTitle(state.modal.resource)} saved successfully.`,
+      successMessage: `บันทึก${resourceTitle(state.modal.resource)}เรียบร้อยแล้ว`,
     },
   );
 
@@ -922,8 +935,8 @@ function bindEvents() {
         await signInWithGoogle();
       },
       {
-        errorMessage: "Google sign-in could not be completed.",
-        onError: (error) => setAuthError(error.message || "Google sign-in could not be completed."),
+        errorMessage: "ไม่สามารถเข้าสู่ระบบด้วย Google ได้",
+        onError: (error) => setAuthError(error.message || "ไม่สามารถเข้าสู่ระบบด้วย Google ได้"),
       },
     ));
 
@@ -936,8 +949,8 @@ function bindEvents() {
         await signInWithEmail(dom.authEmailInput.value.trim(), dom.authPasswordInput.value);
       },
       {
-        errorMessage: "Email sign-in could not be completed.",
-        onError: (error) => setAuthError(error.message || "Email sign-in could not be completed."),
+        errorMessage: "ไม่สามารถเข้าสู่ระบบด้วยอีเมลได้",
+        onError: (error) => setAuthError(error.message || "ไม่สามารถเข้าสู่ระบบด้วยอีเมลได้"),
       },
     );
   });
@@ -961,7 +974,7 @@ function bindEvents() {
         await loadData({ background: true });
       },
       {
-        successMessage: "Workspace display name updated.",
+        successMessage: "อัปเดตชื่อที่แสดงแล้ว",
       },
     ));
 
@@ -973,7 +986,7 @@ function bindEvents() {
         await signOutUser();
       },
       {
-        successMessage: "Signed out successfully.",
+        successMessage: "ออกจากระบบเรียบร้อยแล้ว",
       },
     ));
 
@@ -984,7 +997,7 @@ function bindEvents() {
         await refreshDataWithPresence({ background: true });
       },
       {
-        successMessage: "Latest data loaded.",
+        successMessage: "โหลดข้อมูลล่าสุดเรียบร้อยแล้ว",
       },
     ));
 
@@ -1032,7 +1045,7 @@ function bindEvents() {
     }
 
     if (deleteButton) {
-      const confirmed = window.confirm(`Delete this ${resourceTitle(state.catalogType).toLowerCase()}?`);
+      const confirmed = window.confirm(`ต้องการลบ${resourceTitle(state.catalogType)}นี้ใช่หรือไม่`);
       if (!confirmed) {
         return;
       }
@@ -1044,7 +1057,7 @@ function bindEvents() {
           await refreshDataWithPresence({ background: true });
         },
         {
-          successMessage: `${resourceTitle(state.catalogType)} deleted.`,
+          successMessage: `ลบ${resourceTitle(state.catalogType)}เรียบร้อยแล้ว`,
         },
       );
     }
@@ -1084,7 +1097,7 @@ function bindEvents() {
         await refreshDataWithPresence({ background: true });
       },
       {
-        successMessage: "Auto scheduling completed.",
+        successMessage: "จัดตารางอัตโนมัติเรียบร้อยแล้ว",
       },
     ));
 
@@ -1101,7 +1114,7 @@ function bindEvents() {
         await refreshDataWithPresence({ background: true });
       },
       {
-        successMessage: "Auto scheduling completed.",
+        successMessage: "จัดตารางอัตโนมัติเรียบร้อยแล้ว",
       },
     ));
 
@@ -1113,7 +1126,7 @@ function bindEvents() {
         await loadData({ background: true });
       },
       {
-        successMessage: "Validation finished.",
+        successMessage: "ตรวจสอบตารางเรียบร้อยแล้ว",
       },
     ));
 
@@ -1149,7 +1162,7 @@ function bindEvents() {
         await scheduleGroup(state.selectedGroupId, item.dataset.suggestionDay, Number(item.dataset.suggestionPeriod));
       },
       {
-        successMessage: "Instructional group scheduled.",
+        successMessage: "ลงคาบให้กลุ่มการสอนเรียบร้อยแล้ว",
       },
     );
   });
@@ -1160,7 +1173,7 @@ function bindEvents() {
       return;
     }
 
-    const confirmed = window.confirm("Remove this timetable entry?");
+    const confirmed = window.confirm("ต้องการนำคาบนี้ออกจากตารางใช่หรือไม่");
     if (!confirmed) {
       return;
     }
@@ -1171,7 +1184,7 @@ function bindEvents() {
         await deleteEntry(deleteButton.dataset.entryDelete);
       },
       {
-        successMessage: "Timetable entry removed.",
+        successMessage: "นำคาบออกจากตารางเรียบร้อยแล้ว",
       },
     );
   });
@@ -1228,7 +1241,7 @@ function bindEvents() {
         state.dragPayload = null;
       },
       {
-        successMessage: "Timetable updated.",
+        successMessage: "อัปเดตตารางสอนเรียบร้อยแล้ว",
       },
     );
   });
@@ -1241,7 +1254,7 @@ function bindEvents() {
         await loadData({ background: true });
       },
       {
-        successMessage: "Settings saved.",
+        successMessage: "บันทึกการตั้งค่าเรียบร้อยแล้ว",
       },
     ));
 
@@ -1266,20 +1279,20 @@ async function init() {
       (user) => {
         handleAuthChange(user).catch((error) => {
           console.error(error);
-          setAuthError(error.message || "Authentication state could not be restored.");
+          setAuthError(error.message || "ไม่สามารถกู้คืนสถานะการเข้าสู่ระบบได้");
         });
       },
       (error) => {
         console.error(error);
         state.auth.status = "signed_out";
-        setAuthError(error.message || "Authentication is unavailable right now.");
+        setAuthError(error.message || "ระบบยืนยันตัวตนไม่พร้อมใช้งานในขณะนี้");
         render();
       },
     );
   } catch (error) {
     console.error(error);
     state.auth.status = "signed_out";
-    setAuthError(error.message || "Firebase Authentication could not be initialized.");
+    setAuthError(error.message || "ไม่สามารถเริ่มต้น Firebase Authentication ได้");
     render();
   }
 }
@@ -1292,6 +1305,6 @@ window.addEventListener("beforeunload", () => {
 init().catch((error) => {
   console.error(error);
   state.auth.status = "signed_out";
-  setAuthError(error.message || "TeachTable could not start.");
+  setAuthError(error.message || "TeachTable ไม่สามารถเริ่มต้นระบบได้");
   render();
 });

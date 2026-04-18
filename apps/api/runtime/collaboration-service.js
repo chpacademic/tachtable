@@ -123,16 +123,16 @@ function ensureActorOwnsTouchedResources(locks, mutation) {
   }
 
   if (!mutation.expectedLockIds || mutation.expectedLockIds.length === 0) {
-    return "ต้องจอง lock ก่อนบันทึกการแก้ไข";
+    return "ต้องจองการล็อกก่อนบันทึกการแก้ไข";
   }
 
   const missingLockId = mutation.expectedLockIds.some((lockId) => !actorLockIds.has(lockId));
   if (missingLockId) {
-    return "lock ที่ส่งมาไม่อยู่ในการครอบครองของผู้ใช้หรือหมดอายุแล้ว";
+    return "การล็อกที่ส่งมาไม่อยู่ในการครอบครองของผู้ใช้หรือหมดอายุแล้ว";
   }
 
   const missingOwnership = touched.some((key) => !ownedLocks.has(key));
-  return missingOwnership ? "ผู้ใช้ยังถือ lock ไม่ครบทุก resource ที่แก้ไข" : null;
+  return missingOwnership ? "ผู้ใช้ยังถือการล็อกไม่ครบทุกทรัพยากรที่กำลังแก้ไข" : null;
 }
 
 function mutateEntries(entries, mutation) {
@@ -238,7 +238,7 @@ function applyCollaborativeMutation(state, mutation, now = new Date()) {
       result: {
         ok: false,
         conflicts: blockingConflicts,
-        staleReason: "พบการชนกันของครู ห้อง หรือชั้นเรียนใน slot ที่กำลังแก้ไข",
+        staleReason: "พบการชนกันของครู ห้อง หรือชั้นเรียนในช่วงเวลาที่กำลังแก้ไข",
       },
       nextState,
     };

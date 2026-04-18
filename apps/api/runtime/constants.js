@@ -7,11 +7,11 @@ const EDUCATION_LEVELS = ["PRIMARY", "LOWER_SECONDARY"];
 const USER_ROLES = ["ADMIN", "ACADEMIC_MANAGER", "SUBJECT_TEACHER", "HOMEROOM_TEACHER"];
 
 const DAY_LABELS = {
-  MON: "จันทร์",
-  TUE: "อังคาร",
-  WED: "พุธ",
-  THU: "พฤหัสบดี",
-  FRI: "ศุกร์",
+  MON: "วันจันทร์",
+  TUE: "วันอังคาร",
+  WED: "วันพุธ",
+  THU: "วันพฤหัสบดี",
+  FRI: "วันศุกร์",
 };
 
 const DAY_SHORT_LABELS = {

@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "build": "npm run build:styles",
+    "build:styles": "tailwindcss -i ./apps/web/tailwind.input.css -o ./apps/web/tailwind.css --minify",
     "test": "node apps/api/runtime/runtime.test.js",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:push": "prisma db push --schema prisma/schema.prisma",
@@ -20,5 +22,9 @@
     "pdf-lib": "^1.17.1",
     "pg": "^8.20.0",
     "prisma": "^7.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.2",
+    "tailwindcss": "^4.2.2"
   }
 }

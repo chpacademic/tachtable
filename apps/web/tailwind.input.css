@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@source "./*.{html,js}";
+
+@theme {
+  --font-sans: "IBM Plex Sans Thai", "Segoe UI", sans-serif;
+  --font-display: "Noto Serif Thai", "Georgia", serif;
+  --color-brand-primary: #187498;
+  --color-brand-secondary: #36AE7C;
+  --color-brand-accent: #E36488;
+  --color-brand-danger: #EB5353;
+  --color-brand-warning: #F9D923;
+  --color-brand-cream: #FFFDB7;
+  --color-brand-mint: #AEF4A4;
+  --color-brand-sky: #79B8D1;
+  --color-brand-text: #123041;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::selection {
+    background-color: #FFFDB7;
+    color: #123041;
+  }
+}
+
+@layer components {
+  .tt-display {
+    @apply font-display font-semibold tracking-[-0.04em] text-slate-900;
+  }
+
+  .tt-section-title {
+    @apply font-sans text-[1.08rem] font-semibold tracking-[-0.02em] text-slate-900;
+  }
+
+  .tt-title-spacing {
+    @apply leading-tight;
+  }
+
+  .tt-body-soft {
+    @apply text-[0.98rem] leading-7 text-slate-600;
+  }
+
+  .tt-kicker {
+    @apply inline-flex w-fit items-center rounded-full border border-sky-200/80 bg-white/80 px-3 py-1 text-xs font-semibold tracking-[0.08em] text-sky-700 shadow-sm;
+  }
+
+  .tt-soft-panel {
+    @apply border border-white/70 bg-white/72 shadow-[0_22px_64px_rgba(18,48,65,0.10)] backdrop-blur-xl;
+  }
+
+  .tt-feature-card {
+    @apply transition-transform duration-200 hover:-translate-y-0.5;
+  }
+
+  .tt-focus-panel {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .tt-focus-panel::before {
+    content: "";
+    position: absolute;
+    inset: auto auto -90px -36px;
+    width: 200px;
+    height: 200px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(255, 253, 183, 0.5), rgba(255, 253, 183, 0));
+    z-index: -1;
+  }
+
+  .tt-focus-panel::after {
+    content: "";
+    position: absolute;
+    inset: -80px -40px auto auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(121, 184, 209, 0.28), rgba(121, 184, 209, 0));
+    z-index: -1;
+  }
+}

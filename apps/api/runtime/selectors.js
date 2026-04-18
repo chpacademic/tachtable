@@ -300,7 +300,7 @@ function getGroupSuggestions(db, groupId) {
   const dataset = buildDataset(db);
   const group = db.instructionalGroups.find((item) => item.id === groupId);
   if (!group) {
-    throw new Error(`Unknown instructional group ${groupId}`);
+    throw new Error(`ไม่พบกลุ่มการสอน ${groupId}`);
   }
 
   return findSuggestedSlots({

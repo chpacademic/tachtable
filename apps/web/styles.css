@@ -39,6 +39,7 @@ body {
 body {
   font-family: "IBM Plex Sans Thai", "Segoe UI", sans-serif;
   color: var(--color-text);
+  line-height: 1.6;
   background:
     radial-gradient(circle at top left, rgba(121, 184, 209, 0.28), transparent 30%),
     radial-gradient(circle at top right, rgba(174, 244, 164, 0.18), transparent 26%),
@@ -121,13 +122,13 @@ p {
   margin-bottom: 8px;
   color: var(--color-primary);
   font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
   font-weight: 600;
 }
 
 .muted-text {
   color: var(--color-muted);
+  line-height: 1.65;
 }
 
 .boot-screen,
@@ -166,8 +167,8 @@ p {
 .section-head h3,
 .auth-showcase h1,
 .auth-card h2 {
-  font-family: "Fraunces", serif;
-  font-weight: 700;
+  font-family: "Noto Serif Thai", serif;
+  font-weight: 600;
 }
 
 .boot-card h1,
@@ -288,6 +289,7 @@ p {
   color: var(--color-muted);
   font-size: 0.92rem;
   font-weight: 500;
+  line-height: 1.5;
 }
 
 .auth-chip,

@@ -20,7 +20,7 @@ let authInstance = null;
 
 function ensureConfigured() {
   if (missingKeys.length > 0) {
-    throw new Error(`Firebase web config is missing: ${missingKeys.join(", ")}`);
+    throw new Error(`ยังตั้งค่า Firebase web config ไม่ครบ: ${missingKeys.join(", ")}`);
   }
 }
 

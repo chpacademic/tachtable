@@ -1,49 +1,113 @@
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Overview", hint: "System health and progress" },
-  { id: "catalog", label: "Master data", hint: "Teachers, rooms, subjects, sections" },
-  { id: "timetable", label: "Timetable", hint: "Plan and validate the weekly grid" },
-  { id: "settings", label: "Settings", hint: "School profile and PDF sign-off" },
+  { id: "dashboard", label: "ภาพรวม", hint: "สถานะระบบและความคืบหน้า" },
+  { id: "catalog", label: "ข้อมูลหลัก", hint: "ครู ห้องเรียน วิชา และห้องเรียนประจำ" },
+  { id: "timetable", label: "ตารางสอน", hint: "วางแผน ตรวจสอบ และจัดคาบประจำสัปดาห์" },
+  { id: "settings", label: "ตั้งค่า", hint: "ข้อมูลสถานศึกษาและผู้ลงนามเอกสาร" },
 ];
 
 const SCREEN_META = {
   dashboard: {
-    eyebrow: "School Operations",
-    title: "Operations overview",
-    description: "Track readiness, coverage, conflicts, and staffing from one clean control room.",
+    eyebrow: "ศูนย์ควบคุม",
+    title: "ภาพรวมการดำเนินงาน",
+    description: "ติดตามความพร้อม ความครอบคลุม ความขัดแย้ง และภาระสอนจากหน้าจอเดียวที่อ่านง่ายและเป็นระบบ",
   },
   catalog: {
-    eyebrow: "Data Foundation",
-    title: "Master data workspace",
-    description: "Keep the timetable engine accurate with clean teachers, rooms, subjects, and section data.",
+    eyebrow: "ฐานข้อมูลหลัก",
+    title: "พื้นที่จัดการข้อมูลระบบ",
+    description: "ดูแลข้อมูลครู ห้องเรียน รายวิชา และห้องเรียนให้ถูกต้อง เพื่อให้ระบบจัดตารางทำงานได้แม่นยำ",
   },
   timetable: {
-    eyebrow: "Protected Workspace",
-    title: "Timetable planner",
-    description: "Assign unresolved instructional groups, review suggestions, and validate the final board.",
+    eyebrow: "พื้นที่ทำงานหลัก",
+    title: "ตัวจัดตารางสอน",
+    description: "เลือกกลุ่มที่ยังไม่ลงคาบ ดูคำแนะนำ และตรวจสอบความครบถ้วนของตารางก่อนใช้งานจริง",
   },
   settings: {
-    eyebrow: "Document Setup",
-    title: "School settings",
-    description: "Set the school profile, term information, and PDF signatories used across exports.",
+    eyebrow: "ตั้งค่าเอกสาร",
+    title: "ข้อมูลและเอกลักษณ์สถานศึกษา",
+    description: "กำหนดชื่อโรงเรียน ภาคเรียน ปีการศึกษา และผู้ลงนามสำหรับเอกสารส่งออกทั้งหมด",
   },
 };
 
 const CATALOG_OPTIONS = [
-  { value: "teachers", label: "Teachers" },
-  { value: "rooms", label: "Rooms" },
-  { value: "subjects", label: "Subjects" },
-  { value: "sections", label: "Sections" },
-  { value: "enrollments", label: "Enrollments" },
-  { value: "instructionalGroups", label: "Instructional groups" },
+  { value: "teachers", label: "ครู" },
+  { value: "rooms", label: "ห้องเรียน" },
+  { value: "subjects", label: "รายวิชา" },
+  { value: "sections", label: "ห้องเรียน" },
+  { value: "enrollments", label: "แผนรายวิชา" },
+  { value: "instructionalGroups", label: "กลุ่มการสอน" },
 ];
 
 const DAY_COLUMNS = [
-  { value: "MON", label: "Mon" },
-  { value: "TUE", label: "Tue" },
-  { value: "WED", label: "Wed" },
-  { value: "THU", label: "Thu" },
-  { value: "FRI", label: "Fri" },
+  { value: "MON", label: "จ.", fullLabel: "วันจันทร์" },
+  { value: "TUE", label: "อ.", fullLabel: "วันอังคาร" },
+  { value: "WED", label: "พ.", fullLabel: "วันพุธ" },
+  { value: "THU", label: "พฤ.", fullLabel: "วันพฤหัสบดี" },
+  { value: "FRI", label: "ศ.", fullLabel: "วันศุกร์" },
 ];
+
+const DELIVERY_MODE_LABELS = {
+  WHOLE_CLASS: "ทั้งห้อง",
+  SPLIT_GROUP: "กลุ่มย่อย",
+  TEAM_TEACHING: "สอนร่วม",
+  LARGE_GROUP: "กลุ่มใหญ่",
+};
+
+const TEACHING_ROLE_LABELS = {
+  LEAD: "ครูหลัก",
+  CO_TEACHER: "ครูร่วม",
+  ASSISTANT: "ผู้ช่วยสอน",
+  SUPPORT: "สนับสนุน",
+};
+
+const EDUCATION_LEVEL_LABELS = {
+  PRIMARY: "ประถมศึกษา",
+  LOWER_SECONDARY: "มัธยมศึกษาตอนต้น",
+};
+
+const ROOM_TYPE_LABELS = {
+  CLASSROOM: "ห้องเรียน",
+  LAB: "ห้องปฏิบัติการ",
+  COMPUTER: "ห้องคอมพิวเตอร์",
+  ART: "ห้องศิลปะ",
+  HALL: "หอประชุม",
+};
+
+const SEVERITY_LABELS = {
+  error: "ข้อผิดพลาด",
+  warning: "คำเตือน",
+  success: "พร้อมใช้งาน",
+};
+
+const CONFLICT_CODE_LABELS = {
+  TEACHER_DOUBLE_BOOKED: "ครูสอนซ้อนเวลา",
+  ROOM_DOUBLE_BOOKED: "ห้องเรียนถูกใช้ซ้อน",
+  SECTION_WHOLE_CLASS_COLLISION: "คาบทั้งห้องซ้อนกัน",
+  SECTION_GROUP_OVERLAP: "กลุ่มย่อยซ้อนกัน",
+  TEACHER_OVERLOAD: "ภาระสอนเกินกำหนด",
+  MISSING_SUBJECT_PERIODS: "คาบรายวิชาไม่ครบ",
+  MISSING_GROUP_PERIODS: "คาบกลุ่มการสอนไม่ครบ",
+  SECTION_WEEKLY_TOTAL_INVALID: "คาบรวมรายสัปดาห์ไม่ตรงเป้า",
+  SECTION_DAILY_TOTAL_INVALID: "คาบรวมรายวันไม่สมดุล",
+};
+
+const EVENT_TYPE_LABELS = {
+  ENTRY_CREATED: "เพิ่มคาบเรียน",
+  ENTRY_UPDATED: "ปรับแก้คาบเรียน",
+  ENTRY_DELETED: "ลบคาบเรียน",
+};
+
+const RESOURCE_TYPE_LABELS = {
+  SECTION: "ห้องเรียน",
+  INSTRUCTIONAL_GROUP: "กลุ่มการสอน",
+  ROOM: "ห้อง",
+  TEACHER: "ครู",
+};
+
+const VIEW_LABELS = {
+  section: "มุมมองห้องเรียน",
+  teacher: "มุมมองครู",
+  workspace: "พื้นที่ทำงาน",
+};
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -53,15 +117,76 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function formatDayLabel(day) {
+  return DAY_COLUMNS.find((item) => item.value === day)?.fullLabel || day || "-";
+}
+
+function formatSeverityLabel(severity) {
+  return SEVERITY_LABELS[severity] || severity || "-";
+}
+
+function formatConflictCode(code) {
+  return CONFLICT_CODE_LABELS[code] || code || "-";
+}
+
+function formatTeachingRole(role) {
+  return TEACHING_ROLE_LABELS[role] || role || "-";
+}
+
+function formatDeliveryMode(mode) {
+  return DELIVERY_MODE_LABELS[mode] || mode || "-";
+}
+
+function formatEducationLevel(level) {
+  return EDUCATION_LEVEL_LABELS[level] || level || "-";
+}
+
+function formatRoomType(type) {
+  return ROOM_TYPE_LABELS[type] || type || "-";
+}
+
+function formatResourceType(type) {
+  return RESOURCE_TYPE_LABELS[type] || type || "-";
+}
+
+function formatActivityType(eventType) {
+  return EVENT_TYPE_LABELS[eventType] || eventType || "-";
+}
+
+function formatPresenceView(view) {
+  return VIEW_LABELS[view] || view || "พื้นที่ทำงาน";
+}
+
+function formatTime(value) {
+  if (!value) {
+    return "-";
+  }
+  return new Date(value).toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
+  }
+  return new Date(value).toLocaleString("th-TH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 function formatSectionLabel(section) {
   if (!section) {
     return "-";
   }
-  return `Grade ${section.grade} / Room ${section.roomName}`;
+  const prefix = section.educationLevel === "PRIMARY" ? "ป." : section.educationLevel === "LOWER_SECONDARY" ? "ม." : "";
+  return `${prefix}${section.grade}/${section.roomName}`;
 }
 
 function optionTags(items, selectedValue, valueKey = "id", labelKey = "name", allowBlank = true) {
-  const options = allowBlank ? [`<option value="">Select an option</option>`] : [];
+  const options = allowBlank ? ['<option value="">เลือกตัวเลือก</option>'] : [];
   for (const item of items) {
     const value = item[valueKey];
     const label = item[labelKey];
@@ -74,9 +199,9 @@ function optionTags(items, selectedValue, valueKey = "id", labelKey = "name", al
 
 function buildEmptyState(title, body, tone = "neutral") {
   return `
-    <article class="empty-state ${tone}">
-      <strong>${escapeHtml(title)}</strong>
-      <p>${escapeHtml(body)}</p>
+    <article class="empty-state ${tone} tt-soft-panel">
+      <strong class="tt-section-title">${escapeHtml(title)}</strong>
+      <p class="tt-body-soft">${escapeHtml(body)}</p>
     </article>
   `;
 }
@@ -88,8 +213,8 @@ function buildTableEmptyRow(columnCount, message) {
 function renderWorkspaceState(root, options = {}) {
   const {
     tone = "neutral",
-    title = "Loading workspace",
-    body = "Please wait while TeachTable prepares your data.",
+    title = "กำลังโหลดพื้นที่ทำงาน",
+    body = "กรุณารอสักครู่ ระบบ TeachTable กำลังเตรียมข้อมูลของคุณ",
   } = options;
 
   root.innerHTML = buildEmptyState(title, body, tone);
@@ -98,33 +223,33 @@ function renderWorkspaceState(root, options = {}) {
 function renderMetrics(metricsRoot, dashboard = {}) {
   const items = [
     {
-      label: "Teachers",
+      label: "ครู",
       value: dashboard.teachers ?? 0,
-      detail: "Active teaching staff in the timetable model",
+      detail: "จำนวนครูที่พร้อมใช้งานในแบบจำลองตารางสอน",
       tone: "cool",
     },
     {
-      label: "Rooms",
+      label: "ห้องเรียน",
       value: dashboard.rooms ?? 0,
-      detail: "Classrooms and special rooms available this term",
+      detail: "ห้องเรียนและห้องพิเศษที่พร้อมใช้งานในภาคเรียนนี้",
       tone: "warm",
     },
     {
-      label: "Subjects",
+      label: "รายวิชา",
       value: dashboard.subjects ?? 0,
-      detail: "Subjects currently mapped to sections and teachers",
+      detail: "รายวิชาที่ผูกกับห้องเรียนและครูเรียบร้อยแล้ว",
       tone: "mint",
     },
     {
-      label: "Assigned periods",
+      label: "คาบที่จัดแล้ว",
       value: dashboard.assignedPeriods ?? 0,
-      detail: `Out of ${dashboard.requiredPeriods ?? 0} required periods`,
+      detail: `จากทั้งหมด ${dashboard.requiredPeriods ?? 0} คาบ`,
       tone: "rose",
     },
     {
-      label: "Completion",
+      label: "ความพร้อม",
       value: `${dashboard.completionRate ?? 0}%`,
-      detail: `${(dashboard.alerts || []).length} active alerts to review`,
+      detail: `${(dashboard.alerts || []).length} รายการที่ควรตรวจสอบ`,
       tone: "primary",
     },
   ];
@@ -132,7 +257,7 @@ function renderMetrics(metricsRoot, dashboard = {}) {
   metricsRoot.innerHTML = items
     .map(
       (item) => `
-        <article class="metric-card tone-${item.tone}">
+        <article class="metric-card tone-${item.tone} tt-soft-panel">
           <p class="metric-label">${escapeHtml(item.label)}</p>
           <p class="metric-value">${escapeHtml(item.value)}</p>
           <p class="metric-detail">${escapeHtml(item.detail)}</p>
@@ -146,17 +271,17 @@ function renderStatusList(root, validation = {}) {
   const conflicts = validation.conflicts || [];
   const warnings = conflicts.filter((item) => item.severity === "warning").length;
   const errors = conflicts.filter((item) => item.severity === "error").length;
-  const readiness = errors > 0 ? "Needs attention" : warnings > 0 ? "Ready with warnings" : "Ready to use";
+  const readiness = errors > 0 ? "ต้องตรวจสอบ" : warnings > 0 ? "พร้อมใช้งานแบบมีคำเตือน" : "พร้อมใช้งาน";
   const syncTone = errors > 0 ? "error" : warnings > 0 ? "warning" : "success";
 
   root.innerHTML = `
     <div class="status-row">
       <span class="tone-pill ${syncTone}">${escapeHtml(readiness)}</span>
-      <span class="muted-text">${errors} errors, ${warnings} warnings</span>
+      <span class="muted-text">${errors} ข้อผิดพลาด • ${warnings} คำเตือน</span>
     </div>
     <div class="status-row">
       <span class="tone-dot ${errors > 0 ? "error" : "success"}"></span>
-      <span class="muted-text">Validation feed updates from the latest timetable snapshot.</span>
+      <span class="muted-text">สถานะนี้อัปเดตจากผลตรวจตารางสอนล่าสุดของระบบ</span>
     </div>
   `;
 }
@@ -170,10 +295,10 @@ function renderSectionStatuses(root, statuses = []) {
             <article class="status-card">
               <div class="status-meta">
                 <div>
-                  <strong>${escapeHtml(item.label)}</strong>
-                  <div class="muted-text">${escapeHtml(item.educationLevelLabel)}</div>
+                  <strong class="tt-section-title">${escapeHtml(item.label)}</strong>
+                  <div class="muted-text">${escapeHtml(item.educationLevelLabel || formatEducationLevel(item.educationLevel))}</div>
                 </div>
-                <span class="pill">${item.assignedPeriods}/${item.plannedPeriodsPerWeek} periods</span>
+                <span class="pill">${item.assignedPeriods}/${item.plannedPeriodsPerWeek} คาบ</span>
               </div>
               <div class="progress-row">
                 <div class="progress-track">
@@ -181,12 +306,12 @@ function renderSectionStatuses(root, statuses = []) {
                 </div>
                 <span class="tone-pill ${toneClass}">${item.completionRate}%</span>
               </div>
-              <p class="muted-text">${item.errorCount} errors · ${item.warningCount} warnings</p>
+              <p class="muted-text">${item.errorCount} ข้อผิดพลาด • ${item.warningCount} คำเตือน</p>
             </article>
           `;
         })
         .join("")
-    : buildEmptyState("No sections yet", "Create sections and enrollments to start measuring timetable coverage.");
+    : buildEmptyState("ยังไม่มีข้อมูลห้องเรียน", "เพิ่มห้องเรียนและแผนรายวิชาเพื่อเริ่มประเมินความครอบคลุมของตารางสอน");
 }
 
 function renderAlertFeed(root, alerts = []) {
@@ -196,15 +321,15 @@ function renderAlertFeed(root, alerts = []) {
           (alert) => `
             <article class="stack-item">
               <div class="status-meta">
-                <h4>${escapeHtml(alert.code)}</h4>
-                <span class="tone-pill ${alert.severity === "error" ? "error" : "warning"}">${escapeHtml(alert.severity)}</span>
+                <h4 class="tt-section-title">${escapeHtml(formatConflictCode(alert.code))}</h4>
+                <span class="tone-pill ${alert.severity === "error" ? "error" : "warning"}">${escapeHtml(formatSeverityLabel(alert.severity))}</span>
               </div>
               <p>${escapeHtml(alert.message)}</p>
             </article>
           `,
         )
         .join("")
-    : buildEmptyState("No active alerts", "The current timetable snapshot has no outstanding alert items.");
+    : buildEmptyState("ไม่มีการแจ้งเตือนค้างอยู่", "ผลตรวจตารางล่าสุดยังไม่พบรายการที่ต้องดำเนินการ");
 }
 
 function renderTeacherLoads(root, teacherLoads = []) {
@@ -218,33 +343,34 @@ function renderTeacherLoads(root, teacherLoads = []) {
             <article class="load-row">
               <div class="status-meta">
                 <div>
-                  <strong>${escapeHtml(teacher.name)}</strong>
-                  <div class="muted-text">${escapeHtml((teacher.subjectNames || []).join(", ") || "No subject mapping yet")}</div>
+                  <strong class="tt-section-title">${escapeHtml(teacher.name)}</strong>
+                  <div class="muted-text">${escapeHtml((teacher.subjectNames || []).join(", ") || "ยังไม่ได้ผูกรายวิชา")}</div>
                 </div>
-                <strong>${teacher.current}/${teacher.max} periods</strong>
+                <strong>${teacher.current}/${teacher.max} คาบ</strong>
               </div>
               <div class="load-bar"><div class="load-fill ${toneClass}" style="width: ${Math.min(percent, 100)}%"></div></div>
+              <p class="muted-text">รับผิดชอบ ${teacher.assignedGroups || 0} กลุ่มการสอน</p>
             </article>
           `;
         })
         .join("")
-    : buildEmptyState("No workload data", "Add teachers and timetable assignments to view staff load distribution.");
+    : buildEmptyState("ยังไม่มีข้อมูลภาระงาน", "เพิ่มครูและคาบเรียนในตารางเพื่อดูการกระจายภาระสอน");
 }
 
 function catalogColumns(resource) {
   switch (resource) {
     case "teachers":
-      return ["Code", "Teacher", "Max load", "Roles", "Subjects", "Actions"];
+      return ["รหัส", "ชื่อครู", "คาบสูงสุด", "บทบาท", "รายวิชา", "จัดการ"];
     case "rooms":
-      return ["Code", "Room", "Type", "Capacity", "Actions"];
+      return ["รหัส", "ชื่อห้อง", "ประเภท", "ความจุ", "จัดการ"];
     case "subjects":
-      return ["Code", "Subject", "Credits", "Periods / week", "Learning area", "Actions"];
+      return ["รหัส", "รายวิชา", "หน่วยกิต", "คาบ/สัปดาห์", "กลุ่มสาระ", "จัดการ"];
     case "sections":
-      return ["Level", "Section", "Term", "Planned periods", "Homeroom teacher", "Actions"];
+      return ["ระดับชั้น", "ห้องเรียน", "ภาคเรียน", "คาบเป้าหมาย", "ครูประจำชั้น", "จัดการ"];
     case "enrollments":
-      return ["Section", "Subject", "Lead teacher", "Required periods", "Preferred room", "Actions"];
+      return ["ห้องเรียน", "รายวิชา", "ครูผู้สอนหลัก", "คาบที่ต้องจัด", "ห้องที่ต้องการ", "จัดการ"];
     case "instructionalGroups":
-      return ["Group", "Subject", "Section", "Delivery", "Teachers", "Actions"];
+      return ["กลุ่ม", "รายวิชา", "ห้องเรียน", "รูปแบบ", "ครู", "จัดการ"];
     default:
       return [];
   }
@@ -264,8 +390,8 @@ function matchSearch(record, searchText) {
 function actionButtons(id) {
   return `
     <div class="action-row">
-      <button class="text-button" data-action="edit" data-id="${escapeHtml(id)}">Edit</button>
-      <button class="text-button danger-text" data-action="delete" data-id="${escapeHtml(id)}">Delete</button>
+      <button class="text-button" data-action="edit" data-id="${escapeHtml(id)}">แก้ไข</button>
+      <button class="text-button danger-text" data-action="delete" data-id="${escapeHtml(id)}">ลบ</button>
     </div>
   `;
 }
@@ -291,7 +417,7 @@ function renderCatalogBody(root, resource, data, lookup, searchText) {
         <tr>
           <td>${escapeHtml(record.roomCode)}</td>
           <td>${escapeHtml(record.name)}</td>
-          <td>${escapeHtml(record.specialType)}</td>
+          <td>${escapeHtml(formatRoomType(record.specialType))}</td>
           <td>${escapeHtml(record.capacity)}</td>
           <td>${actionButtons(record.id)}</td>
         </tr>
@@ -314,7 +440,7 @@ function renderCatalogBody(root, resource, data, lookup, searchText) {
     if (resource === "sections") {
       return `
         <tr>
-          <td>${escapeHtml(record.educationLevel)}</td>
+          <td>${escapeHtml(formatEducationLevel(record.educationLevel))}</td>
           <td>${escapeHtml(formatSectionLabel(record))}</td>
           <td>${escapeHtml(`${record.term}/${record.academicYear}`)}</td>
           <td>${escapeHtml(record.plannedPeriodsPerWeek)}</td>
@@ -342,20 +468,20 @@ function renderCatalogBody(root, resource, data, lookup, searchText) {
         <td>${escapeHtml(record.displayName)}</td>
         <td>${escapeHtml(lookup.subjectMap.get(lookup.enrollmentMap.get(record.enrollmentId)?.subjectId)?.name || "-")}</td>
         <td>${escapeHtml(formatSectionLabel(lookup.sectionMap.get(lookup.enrollmentMap.get(record.enrollmentId)?.sectionId)))}</td>
-        <td>${escapeHtml(record.deliveryMode)}</td>
+        <td>${escapeHtml(formatDeliveryMode(record.deliveryMode))}</td>
         <td>${escapeHtml((record.teachers || []).map((assignment) => lookup.teacherMap.get(assignment.teacherId)?.fullName || assignment.teacherId).join(", ") || "-")}</td>
         <td>${actionButtons(record.id)}</td>
       </tr>
     `;
   });
 
-  root.innerHTML = rows.join("") || buildTableEmptyRow(catalogColumns(resource).length, "No records match the current filter.");
+  root.innerHTML = rows.join("") || buildTableEmptyRow(catalogColumns(resource).length, "ไม่พบข้อมูลที่ตรงกับตัวกรองในขณะนี้");
 }
 
 function renderViewSwitch(root, activeView) {
   root.innerHTML = `
-    <button class="${activeView === "section" ? "is-active" : ""}" data-view="section">Section view</button>
-    <button class="${activeView === "teacher" ? "is-active" : ""}" data-view="teacher">Teacher view</button>
+    <button class="${activeView === "section" ? "is-active" : ""}" data-view="section">มุมมองห้องเรียน</button>
+    <button class="${activeView === "teacher" ? "is-active" : ""}" data-view="teacher">มุมมองครู</button>
   `;
 }
 
@@ -370,7 +496,7 @@ function renderScopeSelect(select, state, data) {
 }
 
 function renderBoardHead(root) {
-  root.innerHTML = `<div class="board-corner">Period</div>${DAY_COLUMNS.map((day) => `<div>${escapeHtml(day.label)}</div>`).join("")}`;
+  root.innerHTML = `<div class="board-corner">คาบ</div>${DAY_COLUMNS.map((day) => `<div>${escapeHtml(day.fullLabel)}</div>`).join("")}`;
 }
 
 function renderBoardGrid(root, matrix) {
@@ -378,7 +504,7 @@ function renderBoardGrid(root, matrix) {
     .map(
       (periodRow, periodIndex) => `
         <div class="board-row">
-          <div class="period-label"><strong>P${periodIndex + 1}</strong><span>${periodIndex + 1}</span></div>
+          <div class="period-label"><strong>คาบ ${periodIndex + 1}</strong><span>${periodIndex + 1}</span></div>
           ${periodRow
             .map(
               (entries, dayIndex) => `
@@ -387,8 +513,8 @@ function renderBoardGrid(root, matrix) {
                     .map(
                       (entry) => `
                         <article class="entry-card" draggable="true" data-entry-id="${escapeHtml(entry.id)}" style="--entry-color: ${escapeHtml(entry.colorTone)}">
-                          <button class="entry-delete" data-entry-delete="${escapeHtml(entry.id)}">Remove</button>
-                          <h4>${escapeHtml(entry.subjectName)}</h4>
+                          <button class="entry-delete" data-entry-delete="${escapeHtml(entry.id)}">นำออก</button>
+                          <h4 class="tt-section-title">${escapeHtml(entry.subjectName)}</h4>
                           <p>${escapeHtml(entry.groupName)}</p>
                           <p>${escapeHtml(entry.teacherLabels.join(", "))}</p>
                           <div class="entry-meta">
@@ -416,20 +542,20 @@ function renderGroupPool(root, unresolvedGroups = [], selectedGroupId) {
           (group) => `
             <article class="group-card ${group.groupId === selectedGroupId ? "selected" : ""}" draggable="true" data-group-id="${escapeHtml(group.groupId)}">
               <div class="status-meta">
-                <h4>${escapeHtml(group.subjectName)}</h4>
-                <span class="pill">${group.remainingPeriods}/${group.requiredPeriodsPerWeek} left</span>
+                <h4 class="tt-section-title">${escapeHtml(group.subjectName)}</h4>
+                <span class="pill">${group.remainingPeriods}/${group.requiredPeriodsPerWeek} คาบ</span>
               </div>
-              <p>${escapeHtml(group.displayName)} · ${escapeHtml(group.sectionName)}</p>
+              <p>${escapeHtml(group.displayName)} • ${escapeHtml(group.sectionName)}</p>
               <div class="group-meta">
-                <span class="pill">${escapeHtml(group.deliveryModeLabel)}</span>
+                <span class="pill">${escapeHtml(group.deliveryModeLabel || formatDeliveryMode(group.deliveryMode))}</span>
                 <span class="pill">${escapeHtml(group.studentGroupKey)}</span>
               </div>
-              <p>${escapeHtml((group.teachers || []).join(", ") || "No teacher assigned")}</p>
+              <p>${escapeHtml((group.teachers || []).join(", ") || "ยังไม่ได้กำหนดครู")}</p>
             </article>
           `,
         )
         .join("")
-    : buildEmptyState("All groups scheduled", "There are no unresolved instructional groups in the current scope.");
+    : buildEmptyState("จัดลงคาบครบแล้ว", "ไม่มีกลุ่มการสอนที่ค้างอยู่ในขอบเขตที่คุณกำลังดู");
 }
 
 function renderSimpleStack(root, items, emptyTitle, emptyText, mapper) {
@@ -441,13 +567,13 @@ function renderValidation(root, validation = {}) {
   renderSimpleStack(
     root,
     conflicts,
-    "No validation issues",
-    "Run validation after edits to confirm the timetable is conflict-free.",
+    "ยังไม่พบปัญหา",
+    "กดตรวจสอบหลังแก้ไข เพื่อยืนยันว่าตารางสอนยังไม่มีความขัดแย้งสำคัญ",
     (item) => `
       <article class="stack-item">
         <div class="status-meta">
-          <h4>${escapeHtml(item.code)}</h4>
-          <span class="tone-pill ${item.severity === "error" ? "error" : "warning"}">${escapeHtml(item.severity)}</span>
+          <h4 class="tt-section-title">${escapeHtml(formatConflictCode(item.code))}</h4>
+          <span class="tone-pill ${item.severity === "error" ? "error" : "warning"}">${escapeHtml(formatSeverityLabel(item.severity))}</span>
         </div>
         <p>${escapeHtml(item.message)}</p>
       </article>
@@ -459,15 +585,15 @@ function renderSuggestions(root, suggestions = []) {
   renderSimpleStack(
     root,
     suggestions,
-    "Pick a group first",
-    "Select an unresolved instructional group to see the best suggested slots.",
+    "เลือกกลุ่มที่ต้องการก่อน",
+    "เลือกกลุ่มการสอนที่ยังไม่ลงคาบ เพื่อดูช่วงเวลาที่ระบบแนะนำให้เหมาะสมที่สุด",
     (item) => `
       <article class="stack-item clickable" data-suggestion-day="${escapeHtml(item.day)}" data-suggestion-period="${escapeHtml(item.period)}">
         <div class="status-meta">
-          <h4>${escapeHtml(item.dayLabel)} · Period ${escapeHtml(item.period)}</h4>
-          <span class="pill">Score ${escapeHtml(item.score)}</span>
+          <h4 class="tt-section-title">${escapeHtml(item.dayLabel || formatDayLabel(item.day))} • คาบ ${escapeHtml(item.period)}</h4>
+          <span class="pill">คะแนน ${escapeHtml(item.score)}</span>
         </div>
-        <p>${escapeHtml((item.reasons || []).join(" · ") || "Balanced slot for this instructional group.")}</p>
+        <p>${escapeHtml((item.reasons || []).join(" • ") || "เป็นช่วงเวลาที่สมดุลสำหรับกลุ่มการสอนนี้")}</p>
       </article>
     `,
   );
@@ -477,12 +603,12 @@ function renderActivity(root, activity = {}) {
   renderSimpleStack(
     root,
     activity.recentEvents || [],
-    "No recent activity",
-    "User edits and automation events will appear here once the team starts working in the board.",
+    "ยังไม่มีกิจกรรมล่าสุด",
+    "เมื่อเริ่มมีการแก้ไขตารางหรือระบบอัตโนมัติทำงาน รายการเหล่านั้นจะแสดงที่นี่",
     (item) => `
       <article class="stack-item">
-        <h4>${escapeHtml(item.eventType)}</h4>
-        <p>${escapeHtml(item.actorDisplayName)} · ${new Date(item.createdAt).toLocaleString("en-US")}</p>
+        <h4 class="tt-section-title">${escapeHtml(formatActivityType(item.eventType))}</h4>
+        <p>${escapeHtml(item.actorDisplayName)} • ${escapeHtml(formatDateTime(item.createdAt))}</p>
       </article>
     `,
   );
@@ -492,12 +618,12 @@ function renderPresence(root, activity = {}) {
   renderSimpleStack(
     root,
     activity.activeUsers || [],
-    "No active collaborators",
-    "When other authenticated users open the timetable workspace, they will appear here.",
+    "ยังไม่มีผู้ใช้งานออนไลน์",
+    "เมื่อผู้ใช้ที่ยืนยันตัวตนแล้วเปิดเข้ามาในหน้าจัดตาราง รายชื่อจะแสดงในส่วนนี้",
     (item) => `
       <article class="presence-item">
-        <strong>${escapeHtml(item.displayName)}</strong>
-        <span class="muted-text">${escapeHtml(item.currentView || "workspace")} · ${new Date(item.lastSeenAt).toLocaleTimeString("en-US")}</span>
+        <strong class="tt-section-title">${escapeHtml(item.displayName)}</strong>
+        <span class="muted-text">${escapeHtml(formatPresenceView(item.currentView || "workspace"))} • ${escapeHtml(formatTime(item.lastSeenAt))}</span>
       </article>
     `,
   );
@@ -507,12 +633,12 @@ function renderLocks(root, activity = {}) {
   renderSimpleStack(
     root,
     activity.locks || [],
-    "No active locks",
-    "Temporary edit locks will appear here while timetable cells are being changed.",
+    "ยังไม่มีการล็อกการแก้ไข",
+    "เมื่อมีการแก้ไขคาบเรียน ระบบจะแสดงรายการล็อกชั่วคราวเพื่อป้องกันการชนกันของงาน",
     (item) => `
       <article class="lock-item">
-        <strong>${escapeHtml(item.displayName)}</strong>
-        <span class="muted-text">${escapeHtml(item.resourceType)} · ${escapeHtml(item.resourceId)} · ${escapeHtml(item.day)} period ${escapeHtml(item.period)}</span>
+        <strong class="tt-section-title">${escapeHtml(item.displayName)}</strong>
+        <span class="muted-text">${escapeHtml(formatResourceType(item.resourceType))} • ${escapeHtml(item.resourceId)} • ${escapeHtml(formatDayLabel(item.day))} คาบ ${escapeHtml(item.period)}</span>
       </article>
     `,
   );
@@ -522,38 +648,38 @@ function renderSettingsForm(root, settings = {}) {
   const signatories = settings.signatories || [];
   root.innerHTML = `
     <label class="field">
-      <span>School name</span>
+      <span>ชื่อสถานศึกษา</span>
       <input name="schoolName" value="${escapeHtml(settings.schoolName || "")}" />
     </label>
     <label class="field">
-      <span>Short name</span>
+      <span>ชื่อย่อสถานศึกษา</span>
       <input name="schoolShortName" value="${escapeHtml(settings.schoolShortName || "")}" />
     </label>
     <label class="field">
-      <span>Academic year</span>
+      <span>ปีการศึกษา</span>
       <input name="academicYear" value="${escapeHtml(settings.academicYear || "")}" />
     </label>
     <label class="field">
-      <span>Term</span>
+      <span>ภาคเรียน</span>
       <input name="term" value="${escapeHtml(settings.term || "")}" />
     </label>
     <label class="field full">
-      <span>Logo path</span>
+      <span>พาธโลโก้</span>
       <input name="logoPath" value="${escapeHtml(settings.logoPath || "")}" />
     </label>
     <div class="field full">
-      <span>PDF signatories</span>
+      <span>ผู้ลงนามในเอกสาร PDF</span>
       <div class="signatory-grid">
         ${[0, 1, 2]
           .map(
             (index) => `
               <div class="signatory-card">
                 <label class="field">
-                  <span>Title</span>
+                  <span>ตำแหน่ง</span>
                   <input name="signatoryTitle${index}" value="${escapeHtml(signatories[index]?.title || "")}" />
                 </label>
                 <label class="field">
-                  <span>Name</span>
+                  <span>ชื่อ-สกุล</span>
                   <input name="signatoryName${index}" value="${escapeHtml(signatories[index]?.name || "")}" />
                 </label>
               </div>
@@ -593,22 +719,22 @@ function buildTeacherAssignmentRows(assignments, teachers) {
           (assignment, index) => `
             <div class="assignment-row" data-assignment-index="${index}">
               <label class="field">
-                <span>Teacher</span>
+                <span>ครูผู้สอน</span>
                 <select data-assignment-field="teacherId">${optionTags(teachers, assignment.teacherId, "id", "fullName")}</select>
               </label>
               <label class="field">
-                <span>Role</span>
+                <span>บทบาท</span>
                 <select data-assignment-field="teachingRole">
-                  ${["LEAD", "CO_TEACHER", "ASSISTANT", "SUPPORT"]
-                    .map((role) => `<option value="${role}" ${role === assignment.teachingRole ? "selected" : ""}>${role}</option>`)
+                  ${Object.entries(TEACHING_ROLE_LABELS)
+                    .map(([role, label]) => `<option value="${role}" ${role === assignment.teachingRole ? "selected" : ""}>${label}</option>`)
                     .join("")}
                 </select>
               </label>
               <label class="field">
-                <span>Load factor</span>
+                <span>สัดส่วนภาระสอน</span>
                 <input type="number" step="0.25" min="0.25" data-assignment-field="loadFactor" value="${escapeHtml(assignment.loadFactor || 1)}" />
               </label>
-              <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">Remove</button>
+              <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">ลบแถว</button>
             </div>
           `,
         )
@@ -621,22 +747,22 @@ function buildAssignmentRowHtml(teachers, assignment = {}, index = 0) {
   return `
     <div class="assignment-row" data-assignment-index="${index}">
       <label class="field">
-        <span>Teacher</span>
+        <span>ครูผู้สอน</span>
         <select data-assignment-field="teacherId">${optionTags(teachers, assignment.teacherId, "id", "fullName")}</select>
       </label>
       <label class="field">
-        <span>Role</span>
+        <span>บทบาท</span>
         <select data-assignment-field="teachingRole">
-          ${["LEAD", "CO_TEACHER", "ASSISTANT", "SUPPORT"]
-            .map((role) => `<option value="${role}" ${role === assignment.teachingRole ? "selected" : ""}>${role}</option>`)
+          ${Object.entries(TEACHING_ROLE_LABELS)
+            .map(([role, label]) => `<option value="${role}" ${role === assignment.teachingRole ? "selected" : ""}>${label}</option>`)
             .join("")}
         </select>
       </label>
       <label class="field">
-        <span>Load factor</span>
+        <span>สัดส่วนภาระสอน</span>
         <input type="number" step="0.25" min="0.25" data-assignment-field="loadFactor" value="${escapeHtml(assignment.loadFactor || 1)}" />
       </label>
-      <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">Remove</button>
+      <button type="button" class="ghost-button compact-button" data-remove-assignment="${index}">ลบแถว</button>
     </div>
   `;
 }
@@ -644,75 +770,75 @@ function buildAssignmentRowHtml(teachers, assignment = {}, index = 0) {
 function buildModalForm(resource, record, lookup) {
   if (resource === "teachers") {
     return `
-      <label class="field"><span>Teacher code</span><input name="teacherCode" value="${escapeHtml(record.teacherCode || "")}" required /></label>
-      <label class="field"><span>Full name</span><input name="fullName" value="${escapeHtml(record.fullName || "")}" required /></label>
-      <label class="field"><span>Max periods / week</span><input name="maxPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.maxPeriodsPerWeek || 24)}" /></label>
-      <label class="field"><span>Roles (comma separated)</span><input name="rolesText" value="${escapeHtml((record.roles || []).join(", "))}" /></label>
-      <label class="field full"><span>Subjects</span><select multiple name="subjectIds">${optionTags(lookup.subjects, "", "id", "name", false)}</select></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">Save teacher</button></div>
+      <label class="field"><span>รหัสครู</span><input name="teacherCode" value="${escapeHtml(record.teacherCode || "")}" required /></label>
+      <label class="field"><span>ชื่อ-สกุล</span><input name="fullName" value="${escapeHtml(record.fullName || "")}" required /></label>
+      <label class="field"><span>คาบสูงสุดต่อสัปดาห์</span><input name="maxPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.maxPeriodsPerWeek || 24)}" /></label>
+      <label class="field"><span>บทบาท (คั่นด้วยเครื่องหมายจุลภาค)</span><input name="rolesText" value="${escapeHtml((record.roles || []).join(", "))}" /></label>
+      <label class="field full"><span>รายวิชาที่สอน</span><select multiple name="subjectIds">${optionTags(lookup.subjects, "", "id", "name", false)}</select></label>
+      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลครู</button></div>
     `;
   }
 
   if (resource === "rooms") {
     return `
-      <label class="field"><span>Room code</span><input name="roomCode" value="${escapeHtml(record.roomCode || "")}" required /></label>
-      <label class="field"><span>Room name</span><input name="name" value="${escapeHtml(record.name || "")}" required /></label>
-      <label class="field"><span>Room type</span><input name="specialType" value="${escapeHtml(record.specialType || "CLASSROOM")}" /></label>
-      <label class="field"><span>Capacity</span><input name="capacity" type="number" min="1" value="${escapeHtml(record.capacity || 40)}" /></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">Save room</button></div>
+      <label class="field"><span>รหัสห้อง</span><input name="roomCode" value="${escapeHtml(record.roomCode || "")}" required /></label>
+      <label class="field"><span>ชื่อห้อง</span><input name="name" value="${escapeHtml(record.name || "")}" required /></label>
+      <label class="field"><span>ประเภทห้อง</span><input name="specialType" value="${escapeHtml(record.specialType || "CLASSROOM")}" /></label>
+      <label class="field"><span>ความจุ</span><input name="capacity" type="number" min="1" value="${escapeHtml(record.capacity || 40)}" /></label>
+      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลห้อง</button></div>
     `;
   }
 
   if (resource === "subjects") {
     return `
-      <label class="field"><span>Subject code</span><input name="subjectCode" value="${escapeHtml(record.subjectCode || "")}" required /></label>
-      <label class="field"><span>Subject name</span><input name="name" value="${escapeHtml(record.name || "")}" required /></label>
-      <label class="field"><span>Credits</span><input name="credits" type="number" min="0" step="0.5" value="${escapeHtml(record.credits || 1)}" /></label>
-      <label class="field"><span>Periods / week</span><input name="weeklyPeriods" type="number" min="1" value="${escapeHtml(record.weeklyPeriods || 1)}" /></label>
-      <label class="field full"><span>Learning area</span><input name="learningArea" value="${escapeHtml(record.learningArea || "")}" /></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">Save subject</button></div>
+      <label class="field"><span>รหัสวิชา</span><input name="subjectCode" value="${escapeHtml(record.subjectCode || "")}" required /></label>
+      <label class="field"><span>ชื่อรายวิชา</span><input name="name" value="${escapeHtml(record.name || "")}" required /></label>
+      <label class="field"><span>หน่วยกิต</span><input name="credits" type="number" min="0" step="0.5" value="${escapeHtml(record.credits || 1)}" /></label>
+      <label class="field"><span>คาบต่อสัปดาห์</span><input name="weeklyPeriods" type="number" min="1" value="${escapeHtml(record.weeklyPeriods || 1)}" /></label>
+      <label class="field full"><span>กลุ่มสาระ</span><input name="learningArea" value="${escapeHtml(record.learningArea || "")}" /></label>
+      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลวิชา</button></div>
     `;
   }
 
   if (resource === "sections") {
     return `
-      <label class="field"><span>Education level</span><select name="educationLevel">${["PRIMARY", "LOWER_SECONDARY"].map((level) => `<option value="${level}" ${level === record.educationLevel ? "selected" : ""}>${level}</option>`).join("")}</select></label>
-      <label class="field"><span>Grade</span><input name="grade" type="number" min="1" value="${escapeHtml(record.grade || 1)}" /></label>
-      <label class="field"><span>Room name</span><input name="roomName" value="${escapeHtml(record.roomName || "")}" /></label>
-      <label class="field"><span>Planned periods / week</span><input name="plannedPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.plannedPeriodsPerWeek || 30)}" /></label>
-      <label class="field"><span>Academic year</span><input name="academicYear" value="${escapeHtml(record.academicYear || "")}" /></label>
-      <label class="field"><span>Term</span><input name="term" value="${escapeHtml(record.term || "")}" /></label>
-      <label class="field full"><span>Homeroom teacher</span><select name="homeroomTeacherId">${optionTags(lookup.teachers, record.homeroomTeacherId, "id", "fullName")}</select></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">Save section</button></div>
+      <label class="field"><span>ระดับชั้น</span><select name="educationLevel">${Object.entries(EDUCATION_LEVEL_LABELS).map(([level, label]) => `<option value="${level}" ${level === record.educationLevel ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+      <label class="field"><span>ชั้นปี</span><input name="grade" type="number" min="1" value="${escapeHtml(record.grade || 1)}" /></label>
+      <label class="field"><span>เลขห้อง</span><input name="roomName" value="${escapeHtml(record.roomName || "")}" /></label>
+      <label class="field"><span>คาบเป้าหมายต่อสัปดาห์</span><input name="plannedPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.plannedPeriodsPerWeek || 30)}" /></label>
+      <label class="field"><span>ปีการศึกษา</span><input name="academicYear" value="${escapeHtml(record.academicYear || "")}" /></label>
+      <label class="field"><span>ภาคเรียน</span><input name="term" value="${escapeHtml(record.term || "")}" /></label>
+      <label class="field full"><span>ครูประจำชั้น</span><select name="homeroomTeacherId">${optionTags(lookup.teachers, record.homeroomTeacherId, "id", "fullName")}</select></label>
+      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกข้อมูลห้องเรียน</button></div>
     `;
   }
 
   if (resource === "enrollments") {
     return `
-      <label class="field"><span>Section</span><select name="sectionId">${optionTags(lookup.sections.map((section) => ({ ...section, label: formatSectionLabel(section) })), record.sectionId, "id", "label")}</select></label>
-      <label class="field"><span>Subject</span><select name="subjectId">${optionTags(lookup.subjects, record.subjectId, "id", "name")}</select></label>
-      <label class="field"><span>Lead teacher</span><select name="leadTeacherId">${optionTags(lookup.teachers, record.leadTeacherId, "id", "fullName")}</select></label>
-      <label class="field"><span>Required periods</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" /></label>
-      <label class="field"><span>Preferred room</span><select name="preferredRoomId">${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select></label>
-      <label class="field full"><span>Notes</span><textarea name="notes">${escapeHtml(record.notes || "")}</textarea></label>
-      <div class="full action-row modal-actions"><button class="primary-button" type="submit">Save enrollment</button></div>
+      <label class="field"><span>ห้องเรียน</span><select name="sectionId">${optionTags(lookup.sections.map((section) => ({ ...section, label: formatSectionLabel(section) })), record.sectionId, "id", "label")}</select></label>
+      <label class="field"><span>รายวิชา</span><select name="subjectId">${optionTags(lookup.subjects, record.subjectId, "id", "name")}</select></label>
+      <label class="field"><span>ครูผู้สอนหลัก</span><select name="leadTeacherId">${optionTags(lookup.teachers, record.leadTeacherId, "id", "fullName")}</select></label>
+      <label class="field"><span>คาบที่ต้องจัด</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" /></label>
+      <label class="field"><span>ห้องที่ต้องการ</span><select name="preferredRoomId">${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select></label>
+      <label class="field full"><span>หมายเหตุ</span><textarea name="notes">${escapeHtml(record.notes || "")}</textarea></label>
+      <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกแผนรายวิชา</button></div>
     `;
   }
 
   return `
-    <label class="field"><span>Enrollment</span><select name="enrollmentId">${optionTags(lookup.enrollments.map((enrollment) => ({ ...enrollment, label: `${lookup.subjectMap.get(enrollment.subjectId)?.name || "-"} · ${formatSectionLabel(lookup.sectionMap.get(enrollment.sectionId))}` })), record.enrollmentId, "id", "label")}</select></label>
-    <label class="field"><span>Group code</span><input name="groupCode" value="${escapeHtml(record.groupCode || "")}" /></label>
-    <label class="field"><span>Display name</span><input name="displayName" value="${escapeHtml(record.displayName || "")}" /></label>
-    <label class="field"><span>Delivery mode</span><select name="deliveryMode">${["WHOLE_CLASS", "SPLIT_GROUP", "TEAM_TEACHING", "LARGE_GROUP"].map((mode) => `<option value="${mode}" ${mode === record.deliveryMode ? "selected" : ""}>${mode}</option>`).join("")}</select></label>
-    <label class="field"><span>Student group key</span><input name="studentGroupKey" value="${escapeHtml(record.studentGroupKey || "")}" /></label>
-    <label class="field"><span>Required periods</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" /></label>
-    <label class="field full"><span>Preferred room</span><select name="preferredRoomId">${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select></label>
+    <label class="field"><span>แผนรายวิชา</span><select name="enrollmentId">${optionTags(lookup.enrollments.map((enrollment) => ({ ...enrollment, label: `${lookup.subjectMap.get(enrollment.subjectId)?.name || "-"} • ${formatSectionLabel(lookup.sectionMap.get(enrollment.sectionId))}` })), record.enrollmentId, "id", "label")}</select></label>
+    <label class="field"><span>รหัสกลุ่ม</span><input name="groupCode" value="${escapeHtml(record.groupCode || "")}" /></label>
+    <label class="field"><span>ชื่อกลุ่มแสดงผล</span><input name="displayName" value="${escapeHtml(record.displayName || "")}" /></label>
+    <label class="field"><span>รูปแบบการสอน</span><select name="deliveryMode">${Object.entries(DELIVERY_MODE_LABELS).map(([mode, label]) => `<option value="${mode}" ${mode === record.deliveryMode ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+    <label class="field"><span>คีย์กลุ่มผู้เรียน</span><input name="studentGroupKey" value="${escapeHtml(record.studentGroupKey || "")}" /></label>
+    <label class="field"><span>คาบที่ต้องจัด</span><input name="requiredPeriodsPerWeek" type="number" min="1" value="${escapeHtml(record.requiredPeriodsPerWeek || 1)}" /></label>
+    <label class="field full"><span>ห้องที่ต้องการ</span><select name="preferredRoomId">${optionTags(lookup.rooms, record.preferredRoomId, "id", "name")}</select></label>
     <div class="field full">
-      <span>Teacher assignments</span>
+      <span>การมอบหมายครูผู้สอน</span>
       ${buildTeacherAssignmentRows(record.teachers || [], lookup.teachers)}
-      <button type="button" class="ghost-button" id="add-assignment-button">Add teacher</button>
+      <button type="button" class="ghost-button" id="add-assignment-button">เพิ่มครูผู้สอน</button>
     </div>
-    <div class="full action-row modal-actions"><button class="primary-button" type="submit">Save group</button></div>
+    <div class="full action-row modal-actions"><button class="primary-button" type="submit">บันทึกกลุ่มการสอน</button></div>
   `;
 }
 
@@ -747,4 +873,6 @@ export {
   buildAssignmentRowHtml,
   escapeHtml,
   formatSectionLabel,
+  formatDeliveryMode,
+  formatTeachingRole,
 };

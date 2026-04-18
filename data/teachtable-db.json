@@ -1578,7 +1578,7 @@
       "academicYear": "2569",
       "term": "1",
       "status": "DRAFT",
-      "version": 7,
+      "version": 10,
       "entries": [
         {
           "id": "entry-tt-current-section-p51-MON-1-group-41f844b0",
@@ -1667,26 +1667,6 @@
           ],
           "revision": 1,
           "updatedByUserId": "7d81d8af-7e2e-4de6-9036-a7d1a02d261f"
-        },
-        {
-          "id": "generated-group-41f844b0-MON-4-3",
-          "timetableId": "tt-current",
-          "enrollmentId": "enroll-74384c4c",
-          "instructionalGroupId": "group-41f844b0",
-          "sectionId": "section-p51",
-          "subjectId": "subject-thai",
-          "deliveryMode": "WHOLE_CLASS",
-          "studentGroupKey": "WHOLE_CLASS",
-          "roomId": "room-p51",
-          "day": "MON",
-          "period": 4,
-          "teachers": [
-            {
-              "teacherId": "teacher-thai",
-              "teachingRole": "LEAD",
-              "loadFactor": 1
-            }
-          ]
         },
         {
           "id": "generated-group-41f844b0-TUE-2-2",
@@ -3289,26 +3269,6 @@
           ]
         },
         {
-          "id": "generated-group-a2d5be05-MON-5-2",
-          "timetableId": "tt-current",
-          "enrollmentId": "enroll-1fb2b3f3",
-          "instructionalGroupId": "group-a2d5be05",
-          "sectionId": "section-p51",
-          "subjectId": "subject-health",
-          "deliveryMode": "WHOLE_CLASS",
-          "studentGroupKey": "WHOLE_CLASS",
-          "roomId": "room-hall",
-          "day": "MON",
-          "period": 5,
-          "teachers": [
-            {
-              "teacherId": "teacher-pe",
-              "teachingRole": "LEAD",
-              "loadFactor": 1
-            }
-          ]
-        },
-        {
           "id": "generated-group-a2d5be05-TUE-5-1",
           "timetableId": "tt-current",
           "enrollmentId": "enroll-1fb2b3f3",
@@ -3993,46 +3953,56 @@
         {
           "instructionalGroupId": "group-39ad5fe9",
           "remainingPeriods": 1,
-          "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
-        },
-        {
-          "instructionalGroupId": "group-a7b53e03",
-          "remainingPeriods": 1,
-          "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
-        },
-        {
-          "instructionalGroupId": "group-cf349ae6",
-          "remainingPeriods": 1,
-          "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+          "reason": "ยังจัดไม่ครบตามจำนวนคาบที่กำหนด"
         },
         {
           "instructionalGroupId": "group-f23337be",
           "remainingPeriods": 1,
-          "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+          "reason": "ยังจัดไม่ครบตามจำนวนคาบที่กำหนด"
+        },
+        {
+          "instructionalGroupId": "group-a7b53e03",
+          "remainingPeriods": 1,
+          "reason": "ยังจัดไม่ครบตามจำนวนคาบที่กำหนด"
         },
         {
           "instructionalGroupId": "group-ed3b4a0f",
           "remainingPeriods": 1,
-          "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+          "reason": "ยังจัดไม่ครบตามจำนวนคาบที่กำหนด"
+        },
+        {
+          "instructionalGroupId": "group-41f844b0",
+          "remainingPeriods": 1,
+          "reason": "ยังจัดไม่ครบตามจำนวนคาบที่กำหนด"
+        },
+        {
+          "instructionalGroupId": "group-a2d5be05",
+          "remainingPeriods": 1,
+          "reason": "ยังจัดไม่ครบตามจำนวนคาบที่กำหนด"
+        },
+        {
+          "instructionalGroupId": "group-cf349ae6",
+          "remainingPeriods": 1,
+          "reason": "ยังจัดไม่ครบตามจำนวนคาบที่กำหนด"
         }
       ],
       "createdAt": "2026-04-17T09:17:18.181Z",
-      "updatedAt": "2026-04-18T09:02:43.600Z"
+      "updatedAt": "2026-04-18T16:50:27.469Z"
     }
   ],
   "collaboration": {
     "presences": [
       {
-        "id": "tt-current:7d81d8af-7e2e-4de6-9036-a7d1a02d261f",
+        "id": "tt-current:zU5ZBkFbo4NfetvLSmdJMAD3LTT2",
         "timetableId": "tt-current",
-        "userId": "7d81d8af-7e2e-4de6-9036-a7d1a02d261f",
-        "displayName": "ผู้ใช้ 4df5",
+        "userId": "zU5ZBkFbo4NfetvLSmdJMAD3LTT2",
+        "displayName": "กลุ่มบริหารวิชาการ",
         "status": "ACTIVE",
-        "currentView": "teacher",
-        "selectedSectionId": "",
-        "selectedTeacherId": "teacher-thai",
-        "lastSeenAt": "2026-04-18T09:03:14.917Z",
-        "expiresAt": "2026-04-18T09:04:44.917Z"
+        "currentView": "section",
+        "selectedSectionId": "section-p51",
+        "selectedTeacherId": "",
+        "lastSeenAt": "2026-04-18T16:57:14.171Z",
+        "expiresAt": "2026-04-18T16:58:44.171Z"
       }
     ],
     "locks": [],
@@ -4244,6 +4214,116 @@
           "forceRebuild": false
         },
         "createdAt": "2026-04-18T09:02:43.600Z"
+      },
+      {
+        "id": "evt-16b030ab",
+        "timetableId": "tt-current",
+        "actorUserId": "zU5ZBkFbo4NfetvLSmdJMAD3LTT2",
+        "actorDisplayName": "กลุ่มบริหารวิชาการ โรงเรียนชุมชนบ้านพบพระ",
+        "eventType": "BULK_AUTOSCHEDULE",
+        "baseVersion": 7,
+        "nextVersion": 8,
+        "payload": {
+          "unresolved": [
+            {
+              "instructionalGroupId": "group-39ad5fe9",
+              "remainingPeriods": 1,
+              "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+            },
+            {
+              "instructionalGroupId": "group-a7b53e03",
+              "remainingPeriods": 1,
+              "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+            },
+            {
+              "instructionalGroupId": "group-cf349ae6",
+              "remainingPeriods": 1,
+              "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+            },
+            {
+              "instructionalGroupId": "group-f23337be",
+              "remainingPeriods": 1,
+              "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+            },
+            {
+              "instructionalGroupId": "group-ed3b4a0f",
+              "remainingPeriods": 1,
+              "reason": "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน"
+            }
+          ],
+          "forceRebuild": false
+        },
+        "createdAt": "2026-04-18T16:23:57.149Z"
+      },
+      {
+        "id": "evt-tt-current-9",
+        "timetableId": "tt-current",
+        "actorUserId": "zU5ZBkFbo4NfetvLSmdJMAD3LTT2",
+        "actorDisplayName": "กลุ่มบริหารวิชาการ โรงเรียนชุมชนบ้านพบพระ",
+        "eventType": "ENTRY_DELETED",
+        "baseVersion": 8,
+        "nextVersion": 9,
+        "payload": {
+          "patches": [
+            {
+              "id": "generated-group-41f844b0-MON-4-3",
+              "timetableId": "tt-current",
+              "enrollmentId": "enroll-74384c4c",
+              "instructionalGroupId": "group-41f844b0",
+              "sectionId": "section-p51",
+              "subjectId": "subject-thai",
+              "deliveryMode": "WHOLE_CLASS",
+              "studentGroupKey": "WHOLE_CLASS",
+              "roomId": "room-p51",
+              "day": "MON",
+              "period": 4,
+              "teachers": [
+                {
+                  "teacherId": "teacher-thai",
+                  "teachingRole": "LEAD",
+                  "loadFactor": 1
+                }
+              ],
+              "remove": true
+            }
+          ]
+        },
+        "createdAt": "2026-04-18T16:24:05.990Z"
+      },
+      {
+        "id": "evt-tt-current-10",
+        "timetableId": "tt-current",
+        "actorUserId": "zU5ZBkFbo4NfetvLSmdJMAD3LTT2",
+        "actorDisplayName": "กลุ่มบริหารวิชาการ",
+        "eventType": "ENTRY_DELETED",
+        "baseVersion": 9,
+        "nextVersion": 10,
+        "payload": {
+          "patches": [
+            {
+              "id": "generated-group-a2d5be05-MON-5-2",
+              "timetableId": "tt-current",
+              "enrollmentId": "enroll-1fb2b3f3",
+              "instructionalGroupId": "group-a2d5be05",
+              "sectionId": "section-p51",
+              "subjectId": "subject-health",
+              "deliveryMode": "WHOLE_CLASS",
+              "studentGroupKey": "WHOLE_CLASS",
+              "roomId": "room-hall",
+              "day": "MON",
+              "period": 5,
+              "teachers": [
+                {
+                  "teacherId": "teacher-pe",
+                  "teachingRole": "LEAD",
+                  "loadFactor": 1
+                }
+              ],
+              "remove": true
+            }
+          ]
+        },
+        "createdAt": "2026-04-18T16:50:27.469Z"
       }
     ]
   }

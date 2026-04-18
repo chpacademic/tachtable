@@ -1,4 +1,5 @@
 const {
+  DAY_LABELS,
   PERIODS_PER_DAY,
   WEEKDAYS,
 } = require("./constants");
@@ -72,7 +73,7 @@ function distinctSlotCount(entries) {
 function findSectionIdForGroup(group, context) {
   const enrollment = context.enrollments.find((item) => item.id === group.enrollmentId);
   if (!enrollment) {
-    throw new Error(`Instructional group ${group.id} needs a section reference`);
+    throw new Error(`กลุ่มการสอน ${group.id} ไม่มีข้อมูลอ้างอิงห้องเรียน`);
   }
   return enrollment.sectionId;
 }
@@ -88,7 +89,7 @@ function entriesConflictByStudentCoverage(entry, incomingGroupKey, incomingDeliv
 function ensureSection(sectionId, sections) {
   const section = sections.find((item) => item.id === sectionId);
   if (!section) {
-    throw new Error(`Missing section ${sectionId}`);
+    throw new Error(`ไม่พบห้องเรียน ${sectionId}`);
   }
   return section;
 }
@@ -110,7 +111,14 @@ function validateTimetable(dataset) {
     const sectionKey = `${entry.sectionId}:${entry.day}:${entry.period}`;
     const dayKey = `${entry.sectionId}:${entry.day}`;
 
-    pushCollisionConflict("ROOM_DOUBLE_BOOKED", roomSlotMap, roomKey, entry, conflicts, "ห้องเรียนถูกใช้งานซ้อนกันในเวลาเดียวกัน");
+    pushCollisionConflict(
+      "ROOM_DOUBLE_BOOKED",
+      roomSlotMap,
+      roomKey,
+      entry,
+      conflicts,
+      "ห้องเรียนถูกใช้งานซ้อนกันในช่วงเวลาเดียวกัน",
+    );
 
     const entriesAtSlot = sectionSlotMap.get(sectionKey) || [];
     entriesAtSlot.push(entry);
@@ -139,7 +147,7 @@ function validateTimetable(dataset) {
         entityIds: entriesAtSlot.map((entry) => entry.id),
         day,
         period,
-        message: `ชั้นเรียน ${sectionId} มีคาบทั้งห้องซ้อนกับคาบอื่นในช่วงเวลาเดียวกัน`,
+        message: `ห้องเรียน ${sectionId} มีคาบทั้งห้องซ้อนกับคาบอื่นในช่วงเวลาเดียวกัน`,
       });
       continue;
     }
@@ -164,7 +172,7 @@ function validateTimetable(dataset) {
         code: "TEACHER_OVERLOAD",
         severity: "error",
         entityIds: [teacher.id],
-        message: `ครู ${teacher.fullName} ถูกจัดสอน ${usedLoad} ชั่วโมง เกินจากค่าที่กำหนด ${teacher.maxPeriodsPerWeek} ชั่วโมง`,
+        message: `ครู ${teacher.fullName} ถูกจัดสอน ${usedLoad} คาบ เกินจากค่าที่กำหนด ${teacher.maxPeriodsPerWeek} คาบ`,
       });
     }
   }
@@ -200,7 +208,7 @@ function validateTimetable(dataset) {
         code: "SECTION_WEEKLY_TOTAL_INVALID",
         severity: "error",
         entityIds: [section.id],
-        message: `ห้อง ${section.grade}/${section.roomName} ถูกจัด ${weeklyTotal} ชั่วโมง จากเป้าหมาย ${section.plannedPeriodsPerWeek} ชั่วโมงต่อสัปดาห์`,
+        message: `ห้อง ${section.grade}/${section.roomName} ถูกจัด ${weeklyTotal} คาบ จากเป้าหมาย ${section.plannedPeriodsPerWeek} คาบต่อสัปดาห์`,
       });
     }
 
@@ -212,7 +220,7 @@ function validateTimetable(dataset) {
           severity: "warning",
           entityIds: [section.id],
           day,
-          message: `ห้อง ${section.grade}/${section.roomName} มี ${totalPerDay} คาบในวัน ${day} จากที่กำหนด ${PERIODS_PER_DAY} คาบ`,
+          message: `ห้อง ${section.grade}/${section.roomName} มี ${totalPerDay} คาบใน${DAY_LABELS[day] || day} จากที่กำหนด ${PERIODS_PER_DAY} คาบ`,
         });
       }
     }

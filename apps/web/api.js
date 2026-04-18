@@ -32,12 +32,12 @@ async function request(path, options = {}) {
 
   if (response.status === 401) {
     unauthorizedHandler();
-    throw new Error((payload && payload.message) || "Please sign in before continuing.");
+    throw new Error((payload && payload.message) || "กรุณาเข้าสู่ระบบก่อนดำเนินการต่อ");
   }
 
   if (!response.ok) {
     const message = typeof payload === "string" ? payload : payload?.message;
-    throw new Error(message || "The request could not be completed.");
+    throw new Error(message || "ไม่สามารถดำเนินการตามคำขอได้");
   }
 
   return payload;

@@ -1,3 +1,10 @@
+const {
+  DAY_LABELS,
+  DELIVERY_MODE_LABELS,
+  EDUCATION_LEVEL_LABELS,
+  TEACHING_ROLE_LABELS,
+} = require("./constants");
+
 function escapeCell(cell) {
   const value = String(cell);
   if (value.includes(",") || value.includes('"') || value.includes("\n")) {
@@ -18,7 +25,7 @@ function buildTimetableCsv(params) {
   const roomMap = new Map(params.rooms.map((item) => [item.id, item]));
 
   const rows = [
-    ["Day", "Period", "Level", "Classroom", "Student Group", "Delivery Mode", "Subject Code", "Subject Name", "Teachers", "Room"],
+    ["วัน", "คาบ", "ระดับชั้น", "ห้องเรียน", "กลุ่มผู้เรียน", "รูปแบบการสอน", "รหัสวิชา", "ชื่อวิชา", "ครูผู้สอน", "ห้อง"],
   ];
 
   for (const entry of params.entries) {
@@ -29,17 +36,17 @@ function buildTimetableCsv(params) {
       .map((assignment) => {
         const teacher = teacherMap.get(assignment.teacherId);
         const label = teacher?.fullName || assignment.teacherId;
-        return `${label} (${assignment.teachingRole})`;
+        return `${label} (${TEACHING_ROLE_LABELS[assignment.teachingRole] || assignment.teachingRole})`;
       })
       .join(" | ");
 
     rows.push([
-      entry.day,
+      DAY_LABELS[entry.day] || entry.day,
       entry.period,
-      section?.educationLevel || "-",
+      EDUCATION_LEVEL_LABELS[section?.educationLevel] || section?.educationLevel || "-",
       section ? `${section.grade}/${section.roomName}` : "-",
       entry.studentGroupKey,
-      entry.deliveryMode,
+      DELIVERY_MODE_LABELS[entry.deliveryMode] || entry.deliveryMode,
       subject?.subjectCode || "-",
       subject?.name || "-",
       teacherNames || "-",

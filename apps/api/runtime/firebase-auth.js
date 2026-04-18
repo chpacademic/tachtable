@@ -31,7 +31,7 @@ function parseJsonSegment(segment, label) {
   try {
     return JSON.parse(decodeBase64Url(segment).toString("utf8"));
   } catch {
-    throw new Error(`Invalid Firebase token ${label}`);
+    throw new Error(`โทเค็น Firebase ส่วน ${label} ไม่ถูกต้อง`);
   }
 }
 
@@ -48,7 +48,7 @@ function fetchJson(url) {
       response.on("end", () => {
         const body = Buffer.concat(chunks).toString("utf8");
         if ((response.statusCode || 500) >= 400) {
-          reject(new Error(`Unable to load Firebase certificates (${response.statusCode})`));
+          reject(new Error(`ไม่สามารถโหลดใบรับรอง Firebase ได้ (${response.statusCode})`));
           return;
         }
 
@@ -58,13 +58,13 @@ function fetchJson(url) {
             headers: response.headers,
           });
         } catch {
-          reject(new Error("Firebase certificate response was not valid JSON"));
+          reject(new Error("ข้อมูลใบรับรอง Firebase ไม่ได้อยู่ในรูปแบบ JSON ที่ถูกต้อง"));
         }
       });
     });
 
     request.on("error", () => {
-      reject(new Error("Unable to contact Firebase certificate service"));
+      reject(new Error("ไม่สามารถเชื่อมต่อบริการใบรับรองของ Firebase ได้"));
     });
   });
 }
@@ -91,34 +91,34 @@ function validatePayload(payload) {
   const now = Math.floor(Date.now() / 1000);
 
   if (payload.aud !== projectId) {
-    throw new Error("Firebase token was issued for another project");
+    throw new Error("โทเค็น Firebase นี้ถูกออกให้กับโปรเจกต์อื่น");
   }
 
   if (payload.iss !== issuer) {
-    throw new Error("Firebase token issuer was not recognized");
+    throw new Error("ไม่รู้จักผู้ออกโทเค็น Firebase นี้");
   }
 
   if (!payload.sub || typeof payload.sub !== "string" || payload.sub.length > 128) {
-    throw new Error("Firebase token subject is invalid");
+    throw new Error("ข้อมูลผู้ใช้ในโทเค็น Firebase ไม่ถูกต้อง");
   }
 
   if (typeof payload.exp !== "number" || payload.exp <= now) {
-    throw new Error("Firebase session has expired");
+    throw new Error("เซสชัน Firebase หมดอายุแล้ว");
   }
 
   if (typeof payload.iat !== "number" || payload.iat > now + 300) {
-    throw new Error("Firebase token issue time is invalid");
+    throw new Error("เวลาออกโทเค็น Firebase ไม่ถูกต้อง");
   }
 
   if (payload.auth_time && typeof payload.auth_time === "number" && payload.auth_time > now + 300) {
-    throw new Error("Firebase token auth time is invalid");
+    throw new Error("เวลายืนยันตัวตนของ Firebase ไม่ถูกต้อง");
   }
 }
 
 async function verifyFirebaseIdToken(idToken) {
   const segments = String(idToken || "").split(".");
   if (segments.length !== 3) {
-    throw new Error("Firebase token format is invalid");
+    throw new Error("รูปแบบโทเค็น Firebase ไม่ถูกต้อง");
   }
 
   const [encodedHeader, encodedPayload, encodedSignature] = segments;
@@ -126,7 +126,7 @@ async function verifyFirebaseIdToken(idToken) {
   const payload = parseJsonSegment(encodedPayload, "payload");
 
   if (header.alg !== "RS256" || !header.kid) {
-    throw new Error("Firebase token uses an unsupported signing algorithm");
+    throw new Error("โทเค็น Firebase ใช้อัลกอริทึมการลงนามที่ไม่รองรับ");
   }
 
   validatePayload(payload);
@@ -139,7 +139,7 @@ async function verifyFirebaseIdToken(idToken) {
   }
 
   if (!certificate) {
-    throw new Error("Firebase signing certificate could not be matched");
+    throw new Error("ไม่พบใบรับรองสำหรับตรวจสอบลายเซ็นของ Firebase");
   }
 
   const verifier = crypto.createVerify("RSA-SHA256");
@@ -149,7 +149,7 @@ async function verifyFirebaseIdToken(idToken) {
   const signature = decodeBase64Url(encodedSignature);
   const isValid = verifier.verify(certificate, signature);
   if (!isValid) {
-    throw new Error("Firebase token signature is invalid");
+    throw new Error("ลายเซ็นของโทเค็น Firebase ไม่ถูกต้อง");
   }
 
   return {
@@ -168,7 +168,7 @@ async function authenticateApiRequest(req) {
   if (!idToken) {
     return {
       ok: false,
-      message: "Please sign in before using TeachTable.",
+      message: "กรุณาเข้าสู่ระบบก่อนใช้งาน TeachTable",
     };
   }
 
@@ -178,7 +178,7 @@ async function authenticateApiRequest(req) {
   } catch (error) {
     return {
       ok: false,
-      message: error instanceof Error ? error.message : "Your session is no longer valid.",
+      message: error instanceof Error ? error.message : "เซสชันของคุณไม่สามารถใช้งานต่อได้แล้ว",
     };
   }
 }

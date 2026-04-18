@@ -7,7 +7,7 @@ const { findSuggestedSlots, validateTimetable } = require("./conflict-engine");
 function findEnrollment(enrollmentId, enrollments) {
   const enrollment = enrollments.find((item) => item.id === enrollmentId);
   if (!enrollment) {
-    throw new Error(`Missing enrollment ${enrollmentId}`);
+    throw new Error(`ไม่พบแผนรายวิชา ${enrollmentId}`);
   }
   return enrollment;
 }
@@ -29,7 +29,7 @@ function pickRoomId(group, enrollment, rooms) {
     return enrollment.preferredRoomId;
   }
 
-  return rooms[0]?.id || "default-room";
+  return rooms[0]?.id || "room-default";
 }
 
 function hasDuplicateGroupSameDay(entries, group, day) {
@@ -77,7 +77,7 @@ function autoSchedule(dataset, options = {}) {
         unresolved.push({
           instructionalGroupId: group.id,
           remainingPeriods: remaining,
-          reason: "ไม่พบคาบที่ผ่านเงื่อนไขครู ห้อง และกลุ่มผู้เรียน",
+          reason: "ไม่พบคาบที่ผ่านเงื่อนไขด้านครู ห้อง และกลุ่มผู้เรียน",
         });
         break;
       }
