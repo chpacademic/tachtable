@@ -1,0 +1,24 @@
+{
+  "name": "teachtable",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Runnable local school timetable management system",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node apps/api/runtime/runtime.test.js",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:push": "prisma db push --schema prisma/schema.prisma",
+    "prisma:seed": "node scripts/seed-prisma.js",
+    "prisma:import-json": "node scripts/import-json-to-prisma.js"
+  },
+  "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "firebase": "^12.12.0",
+    "pdf-lib": "^1.17.1",
+    "pg": "^8.20.0",
+    "prisma": "^7.7.0"
+  }
+}

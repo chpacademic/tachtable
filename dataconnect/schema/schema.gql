@@ -1,0 +1,43 @@
+type Teacher @table {
+  displayName: String!
+  email: String!
+  createdAt: Timestamp!
+  photoUrl: String
+}
+
+type Class @table {
+  teacher: Teacher!
+  name: String!
+  academicYear: String!
+  createdAt: Timestamp!
+  description: String
+  subject: String
+}
+
+type Student @table {
+  class: Class!
+  firstName: String!
+  lastName: String!
+  createdAt: Timestamp!
+  email: String
+  studentId: String
+}
+
+type Assignment @table {
+  class: Class!
+  title: String!
+  dueDate: Date!
+  maxPoints: Int!
+  createdAt: Timestamp!
+  description: String
+  assignedDate: Date
+}
+
+type Grade @table {
+  student: Student!
+  assignment: Assignment!
+  score: Int!
+  createdAt: Timestamp!
+  feedback: String
+  gradedAt: Timestamp
+}

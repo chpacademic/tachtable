@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TeachTable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Fraunces:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <script src="/app-config.js"></script>
+
+    <section class="boot-screen" id="boot-screen">
+      <div class="boot-card">
+        <p class="eyebrow">TeachTable</p>
+        <h1>Preparing your protected timetable workspace</h1>
+        <p id="boot-status">Checking authentication and loading the latest school data.</p>
+      </div>
+    </section>
+
+    <section class="auth-screen hidden" id="auth-screen">
+      <div class="auth-showcase">
+        <p class="eyebrow">Professional timetable operations</p>
+        <h1>Login first, then manage the full school schedule with clarity.</h1>
+        <p class="auth-copy">
+          TeachTable centralizes staff load, timetable coverage, data setup, and validation inside one modern workspace
+          protected by Firebase Authentication.
+        </p>
+        <div class="auth-feature-list">
+          <article>
+            <strong>Protected access</strong>
+            <p>Only authenticated users can load master data, collaboration locks, and timetable actions.</p>
+          </article>
+          <article>
+            <strong>Clean planning workspace</strong>
+            <p>Review unresolved groups, place lessons, and validate conflicts without visual clutter.</p>
+          </article>
+          <article>
+            <strong>Operational visibility</strong>
+            <p>Track readiness, alerts, and teacher workload in a layout designed for daily school use.</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="auth-panel">
+        <div class="auth-card">
+          <div class="auth-chip" id="auth-status-chip">Authentication required</div>
+          <p class="eyebrow">Secure sign-in</p>
+          <h2>Access TeachTable</h2>
+          <p class="muted-text">
+            Use your school account to open the workspace. Google sign-in is recommended, with email login available if
+            your Firebase project enables it.
+          </p>
+
+          <button class="primary-button wide" id="google-signin-button" type="button">Continue with Google</button>
+
+          <div class="auth-divider"><span>or sign in with email</span></div>
+
+          <form class="auth-form" id="email-login-form">
+            <label class="field">
+              <span>Email address</span>
+              <input id="auth-email-input" type="email" autocomplete="username" required />
+            </label>
+            <label class="field">
+              <span>Password</span>
+              <input id="auth-password-input" type="password" autocomplete="current-password" required />
+            </label>
+            <button class="ghost-button wide" id="email-login-button" type="submit">Sign in with email</button>
+          </form>
+
+          <p class="auth-error hidden" id="auth-error-message" role="alert"></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="shell hidden" id="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">TT</div>
+          <div>
+            <p class="eyebrow">School Timetable Suite</p>
+            <h1>TeachTable</h1>
+          </div>
+        </div>
+
+        <section class="sidebar-card account-card">
+          <div class="account-header">
+            <div class="avatar" id="user-avatar">TT</div>
+            <div>
+              <p class="sidebar-label">Signed in as</p>
+              <strong id="user-name">-</strong>
+              <p class="muted-text" id="user-email">-</p>
+            </div>
+          </div>
+          <div class="auth-chip subtle" id="account-status">Logged in</div>
+          <label class="field">
+            <span>Workspace display name</span>
+            <input id="display-name-input" type="text" maxlength="60" />
+          </label>
+          <div class="action-row">
+            <button class="ghost-button" id="save-profile-button" type="button">Save name</button>
+            <button class="text-button" id="signout-button" type="button">Sign out</button>
+          </div>
+        </section>
+
+        <nav class="nav" id="nav"></nav>
+
+        <section class="sidebar-card">
+          <p class="sidebar-label">System readiness</p>
+          <div class="status-list" id="system-status"></div>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="school-caption">TeachTable</p>
+            <h2 id="page-title">Operations overview</h2>
+            <p class="topbar-description" id="page-description">Protected timetable access is ready.</p>
+          </div>
+          <div class="topbar-actions">
+            <div class="live-pill" id="live-pill">Loading status</div>
+            <div class="sync-note" id="sync-note">Waiting for first sync</div>
+            <button class="ghost-button" id="refresh-button" type="button">Refresh data</button>
+          </div>
+        </header>
+
+        <section class="workspace-state hidden" id="workspace-state"></section>
+
+        <section class="screen" data-screen="dashboard">
+          <div class="hero-panel">
+            <div class="hero-copy">
+              <p class="eyebrow">Protected operations workspace</p>
+              <h3>Keep the timetable structured, balanced, and ready for real school use.</h3>
+              <p class="hero-text">
+                Review completeness, resolve active alerts, and move from data setup to timetable planning with a clean
+                layout designed for day-to-day scheduling work.
+              </p>
+            </div>
+            <div class="hero-actions">
+              <button class="primary-button" id="hero-auto-button" type="button">Run auto scheduling</button>
+              <button class="ghost-button" data-screen-link="timetable" type="button">Open timetable workspace</button>
+            </div>
+          </div>
+
+          <div class="metrics-grid" id="metrics-grid"></div>
+
+          <div class="dashboard-grid">
+            <section class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Section readiness</p>
+                  <h3>Coverage by section</h3>
+                </div>
+              </div>
+              <div id="section-statuses" class="stack-list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Alert feed</p>
+                  <h3>Validation alerts</h3>
+                </div>
+              </div>
+              <div class="stack-list" id="alert-feed"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Teacher workload</p>
+                <h3>Teaching load distribution</h3>
+              </div>
+            </div>
+            <div id="teacher-loads"></div>
+          </section>
+        </section>
+
+        <section class="screen hidden" data-screen="catalog">
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Structured master data</p>
+                <h3>Catalog management</h3>
+              </div>
+              <div class="toolbar">
+                <select id="catalog-type"></select>
+                <input id="catalog-search" type="search" placeholder="Search records" />
+                <button class="primary-button" id="add-record-button" type="button">Add record</button>
+              </div>
+            </div>
+            <div id="catalog-summary" class="muted-text"></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead id="catalog-head"></thead>
+                <tbody id="catalog-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="screen hidden" data-screen="timetable">
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Timetable workspace</p>
+                <h3>Plan by section or teacher</h3>
+              </div>
+              <div class="toolbar">
+                <div class="segmented" id="view-switch"></div>
+                <select id="scope-select"></select>
+                <button class="ghost-button" id="validate-button" type="button">Validate</button>
+                <button class="ghost-button" id="export-csv-button" type="button">Export CSV</button>
+                <button class="primary-button" id="export-pdf-button" type="button">Export PDF</button>
+              </div>
+            </div>
+
+            <div class="workspace-grid">
+              <aside class="panel accent-panel">
+                <div class="section-head compact">
+                  <div>
+                    <p class="eyebrow">Unscheduled groups</p>
+                    <h3>Remaining instructional work</h3>
+                  </div>
+                  <button class="ghost-button compact-button" id="auto-schedule-button" type="button">Auto place</button>
+                </div>
+                <div id="group-pool" class="group-pool"></div>
+              </aside>
+
+              <section class="board-panel">
+                <div class="board-scroll">
+                  <div class="board-head" id="board-head"></div>
+                  <div class="board-grid" id="board-grid"></div>
+                </div>
+              </section>
+
+              <aside class="panel">
+                <div class="section-head compact">
+                  <div>
+                    <p class="eyebrow">Inspector</p>
+                    <h3>Suggestions and collaboration</h3>
+                  </div>
+                </div>
+                <div class="sub-panel">
+                  <h4>Suggested slots</h4>
+                  <div class="stack-list" id="suggestion-list"></div>
+                </div>
+                <div class="sub-panel">
+                  <h4>Active users</h4>
+                  <div class="stack-list" id="presence-list"></div>
+                </div>
+                <div class="sub-panel">
+                  <h4>Active locks</h4>
+                  <div class="stack-list" id="lock-list"></div>
+                </div>
+                <div class="sub-panel">
+                  <h4>Recent activity</h4>
+                  <div class="stack-list" id="activity-list"></div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Validation snapshot</p>
+                <h3>Latest timetable checks</h3>
+              </div>
+            </div>
+            <div class="stack-list" id="validation-list"></div>
+          </section>
+        </section>
+
+        <section class="screen hidden" data-screen="settings">
+          <section class="panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">School profile</p>
+                <h3>Export and identity settings</h3>
+              </div>
+              <button class="primary-button" id="save-settings-button" type="button">Save settings</button>
+            </div>
+            <form class="settings-form" id="settings-form"></form>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal hidden" id="modal">
+      <div class="modal-card">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow" id="modal-caption">Editor</p>
+            <h3 id="modal-title">New record</h3>
+          </div>
+          <button class="text-button" id="modal-close-button" type="button">Close</button>
+        </div>
+        <form id="modal-form" class="modal-form"></form>
+      </div>
+    </div>
+
+    <div class="toast-stack" id="toast-stack"></div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

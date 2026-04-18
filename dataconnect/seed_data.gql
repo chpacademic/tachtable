@@ -1,0 +1,65 @@
+mutation CreateDemoData @transaction @auth(level: USER, insecureReason: "This is a seed mutation and can be run by any authenticated user to populate initial data.") {
+  user_insertMany(data: [
+    {
+      id: "user1",
+      username: "Alice",
+      email: "alice@example.com",
+      createdAt: "2023-01-01T10:00:00Z"
+    },
+    {
+      id: "user2",
+      username: "Bob",
+      email: "bob@example.com",
+      createdAt: "2023-01-02T11:00:00Z"
+    }
+  ])
+  course_insertMany(data: [
+    {
+      id: "course1",
+      title: "Introduction to Algebra",
+      description: "Basic concepts of algebra.",
+      category: "Mathematics",
+      difficulty: "Beginner",
+      authorUid: "user1",
+      createdAt: "2023-01-03T12:00:00Z"
+    },
+    {
+      id: "course2",
+      title: "Advanced Physics",
+      description: "Exploring complex physics topics.",
+      category: "Science",
+      difficulty: "Advanced",
+      authorUid: "user2",
+      createdAt: "2023-01-04T13:00:00Z"
+    }
+  ])
+  lesson_insertMany(data: [
+    {
+      id: "lesson1",
+      courseId: "course1",
+      title: "Algebra Basics",
+      content: "Understanding variables and equations.",
+      durationMinutes: 30,
+      order: 1,
+      createdAt: "2023-01-05T14:00:00Z"
+    },
+    {
+      id: "lesson2",
+      courseId: "course1",
+      title: "Solving Linear Equations",
+      content: "Step-by-step guide to solving linear equations.",
+      durationMinutes: 45,
+      order: 2,
+      createdAt: "2023-01-06T15:00:00Z"
+    },
+    {
+      id: "lesson3",
+      courseId: "course2",
+      title: "Quantum Mechanics Fundamentals",
+      content: "Introduction to quantum principles.",
+      durationMinutes: 60,
+      order: 1,
+      createdAt: "2023-01-07T16:00:00Z"
+    }
+  ])
+}
