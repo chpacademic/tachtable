@@ -1,0 +1,32 @@
+query ListPublicTasks @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  tasks {
+    id
+    title
+    description
+  }
+}
+
+query GetMyTasks @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  tasks(where: {ownerUid: {eq_expr: "auth.uid"}}) {
+    id
+    title
+    isCompleted
+    dueDate
+  }
+}
+
+mutation CreateTask($title: String!, $description: String, $dueDate: Timestamp) @auth(level: USER) {
+  task: task_insert(data: {
+    title: $title,
+    description: $description,
+    isCompleted: false,
+    ownerUid_expr: "auth.uid",
+    dueDate: $dueDate
+  })
+}
+
+mutation UpdateTaskStatus($id: UUID!, $isCompleted: Boolean!) @auth(level: USER) {
+  task: task_update(key: {id: $id}, data: {
+    isCompleted: $isCompleted
+  })
+}

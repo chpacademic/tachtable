@@ -1,0 +1,184 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum EducationLevel {
+  PRIMARY
+  LOWER_SECONDARY
+}
+
+enum TimetableStatus {
+  DRAFT
+  VALIDATED
+  APPROVED
+  PUBLISHED
+}
+
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+}
+
+enum DeliveryMode {
+  WHOLE_CLASS
+  SPLIT_GROUP
+  TEAM_TEACHING
+  LARGE_GROUP
+}
+
+model SchoolSetting {
+  id              String   @id
+  schoolName      String
+  schoolShortName String
+  academicYear    String
+  term            String
+  logoPath        String
+  signatories     Json
+  createdAt       DateTime
+  updatedAt       DateTime
+}
+
+model Teacher {
+  id                String   @id
+  teacherCode       String   @unique
+  fullName          String
+  maxPeriodsPerWeek Int
+  roles             Json
+  subjectIds        Json
+}
+
+model Room {
+  id          String  @id
+  roomCode    String  @unique
+  name        String
+  specialType String
+  capacity    Int
+}
+
+model Subject {
+  id              String @id
+  subjectCode     String @unique
+  name            String
+  credits         Float
+  weeklyPeriods   Int
+  learningArea    String
+  educationLevels Json
+}
+
+model Section {
+  id                   String         @id
+  educationLevel       EducationLevel
+  academicYear         String
+  term                 String
+  grade                Int
+  roomName             String
+  plannedPeriodsPerWeek Int
+  homeroomTeacherId    String
+}
+
+model Enrollment {
+  id                     String @id
+  sectionId              String
+  subjectId              String
+  leadTeacherId          String
+  requiredPeriodsPerWeek Int
+  preferredRoomId        String
+  notes                  String
+}
+
+model InstructionalGroup {
+  id                     String       @id
+  enrollmentId           String
+  groupCode              String
+  displayName            String
+  deliveryMode           DeliveryMode
+  studentGroupKey        String
+  requiredPeriodsPerWeek Int
+  preferredRoomId        String
+  teachers               Json
+}
+
+model Timetable {
+  id           String          @id
+  name         String
+  academicYear String
+  term         String
+  status       TimetableStatus
+  version      Int
+  unresolved   Json
+  createdAt    DateTime
+  updatedAt    DateTime
+}
+
+model TimetableEntry {
+  id                   String       @id
+  timetableId          String
+  enrollmentId         String
+  instructionalGroupId String
+  sectionId            String
+  subjectId            String
+  deliveryMode         DeliveryMode
+  studentGroupKey      String
+  roomId               String
+  day                  Weekday
+  period               Int
+  teachers             Json
+  revision             Int
+  updatedByUserId      String?
+  updatedAt            DateTime
+
+  @@unique([timetableId, instructionalGroupId, day, period])
+  @@unique([timetableId, roomId, day, period])
+  @@index([timetableId, sectionId, day, period])
+}
+
+model TimetablePresence {
+  id                String   @id
+  timetableId       String
+  userId            String
+  displayName       String
+  status            String
+  currentView       String
+  selectedSectionId String
+  selectedTeacherId String
+  colorToken        String
+  lastSeenAt        DateTime
+  expiresAt         DateTime
+}
+
+model TimetableSlotLock {
+  id           String   @id
+  timetableId  String
+  userId       String
+  displayName  String
+  resourceType String
+  resourceId   String
+  day          Weekday
+  period       Int
+  note         String
+  expiresAt    DateTime
+
+  @@unique([timetableId, resourceType, resourceId, day, period])
+}
+
+model TimetableChangeEvent {
+  id               String   @id
+  timetableId      String
+  actorUserId      String
+  actorDisplayName String
+  eventType        String
+  baseVersion      Int
+  nextVersion      Int
+  payload          Json
+  createdAt        DateTime
+
+  @@index([timetableId, createdAt])
+}

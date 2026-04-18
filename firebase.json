@@ -1,0 +1,18 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyClpCVopmm2uMz-VIo14qBTlygI5qW0F9U",
+  authDomain: "teachtable-chpschool.firebaseapp.com",
+  databaseURL: "https://teachtable-chpschool-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "teachtable-chpschool",
+  storageBucket: "teachtable-chpschool.firebasestorage.app",
+  messagingSenderId: "533934856388",
+  appId: "1:533934856388:web:9731938ea1ed91fb699191"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);

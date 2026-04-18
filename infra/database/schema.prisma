@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EducationLevel {
+  PRIMARY
+  LOWER_SECONDARY
+}
+
+enum UserRole {
+  ADMIN
+  ACADEMIC_MANAGER
+  SUBJECT_TEACHER
+  HOMEROOM_TEACHER
+}
+
+enum Weekday {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+}
+
+enum TimetableStatus {
+  DRAFT
+  VALIDATED
+  APPROVED
+  PUBLISHED
+}
+
+enum ConflictSeverity {
+  WARNING
+  ERROR
+}
+
+enum DeliveryMode {
+  WHOLE_CLASS
+  SPLIT_GROUP
+  TEAM_TEACHING
+  LARGE_GROUP
+}
+
+enum TeachingRole {
+  LEAD
+  CO_TEACHER
+  ASSISTANT
+  SUPPORT
+}
+
+enum PresenceStatus {
+  ACTIVE
+  IDLE
+  DISCONNECTED
+}
+
+enum TimetableEventType {
+  ENTRY_CREATED
+  ENTRY_UPDATED
+  ENTRY_MOVED
+  ENTRY_DELETED
+  SLOT_LOCKED
+  SLOT_RELEASED
+  BULK_AUTOSCHEDULE
+  VALIDATION_RUN
+}
+
+model User {
+  id          String              @id @default(cuid())
+  email       String              @unique
+  password    String
+  displayName String
+  role        UserRole
+  teacherId   String?             @unique
+  teacher     TeacherProfile?     @relation(fields: [teacherId], references: [id])
+  presences   TimetablePresence[]
+  slotLocks   TimetableSlotLock[]
+  changes     TimetableChangeEvent[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model AcademicYear {
+  id          String         @id @default(cuid())
+  label       String         @unique
+  terms       Term[]
+  sections    ClassSection[]
+  timetables  Timetable[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Term {
+  id             String       @id @default(cuid())
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  name           String
+  sequence       Int
+  sections       ClassSection[]
+  timetables     Timetable[]
+
+  @@unique([academicYearId, sequence])
+}
+
+model TeacherProfile {
+  id                          String                   @id @default(cuid())
+  teacherCode                 String                   @unique
+  fullName                    String
+  maxPeriodsPerWeek           Int
+  canTeach                    TeacherSubject[]
+  homeroomOf                  ClassSection[]           @relation("HomeroomTeacher")
+  leadEnrollments             Enrollment[]             @relation("EnrollmentLeadTeacher")
+  instructionalGroupAssignments InstructionalGroupTeacher[]
+  timetableEntryAssignments   TimetableEntryTeacher[]
+  createdAt                   DateTime                 @default(now())
+  updatedAt                   DateTime                 @updatedAt
+}
+
+model Subject {
+  id                 String           @id @default(cuid())
+  subjectCode        String           @unique
+  name               String
+  credits            Decimal          @db.Decimal(4, 2)
+  weeklyPeriods      Int
+  learningArea       String?
+  offerings          SubjectOffering[]
+  teacherMappings    TeacherSubject[]
+  enrollments        Enrollment[]
+  timetableEntries   TimetableEntry[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+model SubjectOffering {
+  id              String          @id @default(cuid())
+  subjectId       String
+  subject         Subject         @relation(fields: [subjectId], references: [id])
+  educationLevel  EducationLevel
+  grade           Int
+  isActive        Boolean         @default(true)
+
+  @@unique([subjectId, educationLevel, grade])
+}
+
+model TeacherSubject {
+  teacherId   String
+  subjectId   String
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [id])
+  subject     Subject        @relation(fields: [subjectId], references: [id])
+
+  @@id([teacherId, subjectId])
+}
+
+model Room {
+  id                         String               @id @default(cuid())
+  roomCode                   String               @unique
+  name                       String
+  capacity                   Int?
+  specialType                String?
+  preferredInstructionalGroups InstructionalGroup[]
+  timetableEntries           TimetableEntry[]
+}
+
+model ClassSection {
+  id                 String          @id @default(cuid())
+  academicYearId     String
+  academicYear       AcademicYear    @relation(fields: [academicYearId], references: [id])
+  termId             String
+  term               Term            @relation(fields: [termId], references: [id])
+  educationLevel     EducationLevel
+  grade              Int
+  roomName           String
+  plannedPeriodsPerWeek Int         @default(30)
+  homeroomTeacherId  String?
+  homeroomTeacher    TeacherProfile? @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  enrollments        Enrollment[]
+  timetableEntries   TimetableEntry[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@unique([academicYearId, termId, educationLevel, grade, roomName])
+}
+
+model Enrollment {
+  id                     String               @id @default(cuid())
+  sectionId              String
+  section                ClassSection         @relation(fields: [sectionId], references: [id])
+  subjectId              String
+  subject                Subject              @relation(fields: [subjectId], references: [id])
+  leadTeacherId          String?
+  leadTeacher            TeacherProfile?      @relation("EnrollmentLeadTeacher", fields: [leadTeacherId], references: [id])
+  requiredPeriodsPerWeek Int
+  preferredRoomId        String?
+  preferredRoom          Room?                @relation(fields: [preferredRoomId], references: [id])
+  notes                  String?
+  instructionalGroups    InstructionalGroup[]
+  timetableEntries       TimetableEntry[]
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  @@unique([sectionId, subjectId])
+}
+
+model InstructionalGroup {
+  id                    String                    @id @default(cuid())
+  enrollmentId          String
+  enrollment            Enrollment                @relation(fields: [enrollmentId], references: [id])
+  groupCode             String
+  displayName           String
+  deliveryMode          DeliveryMode              @default(WHOLE_CLASS)
+  studentGroupKey       String                    @default("WHOLE_CLASS")
+  requiredPeriodsPerWeek Int
+  preferredRoomId       String?
+  preferredRoom         Room?                     @relation(fields: [preferredRoomId], references: [id])
+  teachers              InstructionalGroupTeacher[]
+  timetableEntries      TimetableEntry[]
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@unique([enrollmentId, groupCode])
+}
+
+model InstructionalGroupTeacher {
+  id                   String              @id @default(cuid())
+  instructionalGroupId String
+  instructionalGroup   InstructionalGroup  @relation(fields: [instructionalGroupId], references: [id])
+  teacherId            String
+  teacher              TeacherProfile      @relation(fields: [teacherId], references: [id])
+  teachingRole         TeachingRole        @default(LEAD)
+  loadFactor           Float               @default(1)
+
+  @@unique([instructionalGroupId, teacherId])
+}
+
+model Timetable {
+  id              String                 @id @default(cuid())
+  academicYearId  String
+  academicYear    AcademicYear           @relation(fields: [academicYearId], references: [id])
+  termId          String
+  term            Term                   @relation(fields: [termId], references: [id])
+  educationLevel  EducationLevel
+  status          TimetableStatus        @default(DRAFT)
+  name            String
+  version         Int                    @default(1)
+  lastActivityAt  DateTime               @default(now())
+  entries         TimetableEntry[]
+  conflicts       ScheduleConflict[]
+  presences       TimetablePresence[]
+  slotLocks       TimetableSlotLock[]
+  changeEvents    TimetableChangeEvent[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+model TimetableEntry {
+  id                   String                @id @default(cuid())
+  timetableId          String
+  timetable            Timetable             @relation(fields: [timetableId], references: [id])
+  enrollmentId         String
+  enrollment           Enrollment            @relation(fields: [enrollmentId], references: [id])
+  instructionalGroupId String
+  instructionalGroup   InstructionalGroup    @relation(fields: [instructionalGroupId], references: [id])
+  sectionId            String
+  section              ClassSection          @relation(fields: [sectionId], references: [id])
+  subjectId            String
+  subject              Subject               @relation(fields: [subjectId], references: [id])
+  deliveryMode         DeliveryMode          @default(WHOLE_CLASS)
+  studentGroupKey      String                @default("WHOLE_CLASS")
+  roomId               String
+  room                 Room                  @relation(fields: [roomId], references: [id])
+  day                  Weekday
+  period               Int
+  teachers             TimetableEntryTeacher[]
+  revision             Int                   @default(1)
+  updatedByUserId      String?
+  updatedAt            DateTime              @updatedAt
+
+  @@unique([timetableId, instructionalGroupId, day, period])
+  @@unique([timetableId, roomId, day, period])
+  @@index([timetableId, sectionId, day, period])
+}
+
+model TimetableEntryTeacher {
+  id               String          @id @default(cuid())
+  timetableEntryId String
+  timetableEntry   TimetableEntry  @relation(fields: [timetableEntryId], references: [id])
+  teacherId        String
+  teacher          TeacherProfile  @relation(fields: [teacherId], references: [id])
+  teachingRole     TeachingRole    @default(LEAD)
+  loadFactor       Float           @default(1)
+
+  @@unique([timetableEntryId, teacherId])
+}
+
+model ScheduleConflict {
+  id           String           @id @default(cuid())
+  timetableId  String
+  timetable    Timetable        @relation(fields: [timetableId], references: [id])
+  code         String
+  severity     ConflictSeverity
+  message      String
+  entityIds    Json
+  day          Weekday?
+  period       Int?
+  resolved     Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+}
+
+model TimetablePresence {
+  id                String         @id @default(cuid())
+  timetableId       String
+  timetable         Timetable      @relation(fields: [timetableId], references: [id])
+  userId            String
+  user              User           @relation(fields: [userId], references: [id])
+  status            PresenceStatus @default(ACTIVE)
+  currentView       String?
+  selectedSectionId String?
+  selectedTeacherId String?
+  colorToken        String?
+  lastSeenAt        DateTime       @default(now())
+  expiresAt         DateTime
+  createdAt         DateTime       @default(now())
+
+  @@unique([timetableId, userId])
+}
+
+model TimetableSlotLock {
+  id              String     @id @default(cuid())
+  timetableId     String
+  timetable       Timetable  @relation(fields: [timetableId], references: [id])
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  resourceType    String
+  resourceId      String
+  day             Weekday
+  period          Int
+  note            String?
+  expiresAt       DateTime
+  createdAt       DateTime   @default(now())
+
+  @@unique([timetableId, resourceType, resourceId, day, period])
+}
+
+model TimetableChangeEvent {
+  id            String             @id @default(cuid())
+  timetableId   String
+  timetable     Timetable          @relation(fields: [timetableId], references: [id])
+  actorUserId   String
+  actorUser     User               @relation(fields: [actorUserId], references: [id])
+  eventType     TimetableEventType
+  baseVersion   Int
+  nextVersion   Int
+  payload       Json
+  createdAt     DateTime           @default(now())
+
+  @@index([timetableId, createdAt])
+}
