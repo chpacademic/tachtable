@@ -1,0 +1,50 @@
+:root {
+  --font-heading: "Prompt", sans-serif;
+  --font-body: "Sarabun", sans-serif;
+
+  --color-bg: #edf4f7;
+  --color-bg-warm: #fffdf5;
+  --color-surface: rgba(255, 255, 255, 0.94);
+  --color-surface-strong: #ffffff;
+  --color-surface-muted: #f1f6f9;
+  --color-border: rgba(24, 116, 152, 0.18);
+  --color-border-strong: rgba(24, 116, 152, 0.28);
+  --color-text: #172431;
+  --color-text-soft: #43586a;
+
+  --color-primary: #187498;
+  --color-primary-strong: #125c79;
+  --color-primary-soft: rgba(24, 116, 152, 0.12);
+  --color-secondary: #36ae7c;
+  --color-secondary-soft: #aef4a4;
+  --color-accent: #e36488;
+  --color-danger: #eb5353;
+  --color-warning: #f9d923;
+  --color-warning-soft: #fffdb7;
+  --color-info-soft: #79b8d1;
+
+  --font-ui: var(--font-heading);
+  --color-muted: var(--color-text-soft);
+  --color-surface-alt: var(--color-surface-muted);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+
+  --shadow-sm: 0 4px 14px rgba(23, 36, 49, 0.06);
+  --shadow-md: 0 16px 38px rgba(23, 36, 49, 0.08);
+  --shadow-lg: 0 28px 78px rgba(23, 36, 49, 0.12);
+
+  --transition: 180ms ease;
+  --sidebar-width: 264px;
+  --page-max-width: 1600px;
+}

@@ -2,7 +2,7 @@ import {
   applyMutation,
   autoSchedule,
   claimLock,
-  configureApi,
+  configureApiClient,
   deleteResource,
   exportCsv,
   exportPdf,
@@ -16,16 +16,21 @@ import {
   saveResource,
   saveSettings,
   validateTimetable,
-} from "./api.js";
+} from "./app/services/api-client.js";
 import {
-  getAuthSetupStatus,
   getCurrentIdToken,
   initializeFirebaseAuth,
   observeAuthState,
   signInWithEmail,
   signInWithGoogle,
   signOutUser,
-} from "./auth.js";
+} from "./app/services/auth-service.js";
+import { getDom } from "./app/dom.js";
+import { createRouter } from "./app/router.js";
+import { createAppStore, createInitialAppState } from "./app/store/app-store.js";
+import { showToast } from "./app/components/common/toast.js";
+import { DEFAULT_SCREEN, HEARTBEAT_INTERVAL_MS } from "./app/utils/constants.js";
+import { formatSyncTime, getInitials, humanizeProvider } from "./app/utils/formatters.js";
 import {
   DAY_COLUMNS,
   SCREEN_META,
@@ -65,50 +70,12 @@ import {
   renderWorkspaceState,
 } from "./render.js";
 
-const DEFAULT_SCREEN = "dashboard";
-const SCREEN_IDS = new Set(Object.keys(SCREEN_META));
-const HEARTBEAT_INTERVAL_MS = 60000;
-
-const state = {
-  screen: resolveScreenFromHash(),
-  catalogType: "teachers",
-  catalogFilter: "",
-  catalogSearch: "",
-  dashboardLevelFilter: "",
-  view: "section",
-  scopeId: "",
-  exportScope: "current",
-  exportSearch: "",
-  exportSelectionIds: [],
-  selectedGroupId: "",
-  suggestions: [],
-  dragPayload: null,
-  data: null,
-  dataState: "idle",
-  dataError: "",
-  lastSyncedAt: "",
-  modal: {
-    open: false,
-    resource: "teachers",
-    recordId: "",
-  },
-  auth: {
-    status: "loading",
-    user: null,
-    error: "",
-    config: getAuthSetupStatus(),
-  },
-  userProfile: {
-    userId: "",
-    displayName: "",
-  },
-  lookupCache: {
-    data: null,
-    value: null,
-  },
-  settingsDirty: false,
-  busy: new Set(),
-};
+const router = createRouter({
+  screens: Object.keys(SCREEN_META),
+  defaultScreen: DEFAULT_SCREEN,
+});
+const appStore = createAppStore(createInitialAppState(router.resolve()));
+const state = appStore.getState();
 
 let authUnsubscribe = () => undefined;
 let heartbeatTimer = null;
@@ -127,98 +94,21 @@ const SUBJECT_AREA_COLORS = {
 const DEVELOPMENT_ACTIVITY_COLOR = "#f28f3b";
 const DEFAULT_SUBJECT_COLOR = "#187498";
 
-const dom = {
-  bootScreen: document.getElementById("boot-screen"),
-  bootStatus: document.getElementById("boot-status"),
-  authScreen: document.getElementById("auth-screen"),
-  authStatusChip: document.getElementById("auth-status-chip"),
-  authErrorMessage: document.getElementById("auth-error-message"),
-  googleSigninButton: document.getElementById("google-signin-button"),
-  emailLoginForm: document.getElementById("email-login-form"),
-  authEmailInput: document.getElementById("auth-email-input"),
-  authPasswordInput: document.getElementById("auth-password-input"),
-  emailLoginButton: document.getElementById("email-login-button"),
-  appShell: document.getElementById("app-shell"),
-  nav: document.getElementById("nav"),
-  systemStatus: document.getElementById("system-status"),
-  displayNameInput: document.getElementById("display-name-input"),
-  saveProfileButton: document.getElementById("save-profile-button"),
-  signoutButton: document.getElementById("signout-button"),
-  userAvatar: document.getElementById("user-avatar"),
-  userName: document.getElementById("user-name"),
-  userEmail: document.getElementById("user-email"),
-  accountStatus: document.getElementById("account-status"),
-  schoolCaption: document.getElementById("school-caption"),
-  pageTitle: document.getElementById("page-title"),
-  pageDescription: document.getElementById("page-description"),
-  livePill: document.getElementById("live-pill"),
-  syncNote: document.getElementById("sync-note"),
-  refreshButton: document.getElementById("refresh-button"),
-  workspaceState: document.getElementById("workspace-state"),
-  metricsGrid: document.getElementById("metrics-grid"),
-  sectionStatuses: document.getElementById("section-statuses"),
-  alertFeed: document.getElementById("alert-feed"),
-  teacherLoads: document.getElementById("teacher-loads"),
-  catalogType: document.getElementById("catalog-type"),
-  catalogFilter: document.getElementById("catalog-filter"),
-  catalogSearch: document.getElementById("catalog-search"),
-  addRecordButton: document.getElementById("add-record-button"),
-  catalogSummary: document.getElementById("catalog-summary"),
-  catalogHead: document.getElementById("catalog-head"),
-  catalogBody: document.getElementById("catalog-body"),
-  dashboardLevelFilter: document.getElementById("dashboard-level-filter"),
-  dashboardFilterNote: document.getElementById("dashboard-filter-note"),
-  dashboardInsights: document.getElementById("dashboard-insights"),
-  dashboardSectionChart: document.getElementById("dashboard-section-chart"),
-  dashboardTeacherChart: document.getElementById("dashboard-teacher-chart"),
-  viewSwitch: document.getElementById("view-switch"),
-  scopeSelect: document.getElementById("scope-select"),
-  validateButton: document.getElementById("validate-button"),
-  exportScopeNote: document.getElementById("export-scope-note"),
-  exportScopeSelect: document.getElementById("export-scope-select"),
-  exportSearchInput: document.getElementById("export-search-input"),
-  selectVisibleButton: document.getElementById("select-visible-button"),
-  clearExportSelectionButton: document.getElementById("clear-export-selection-button"),
-  exportSelectionPanel: document.getElementById("export-selection-panel"),
-  exportCsvButton: document.getElementById("export-csv-button"),
-  exportPdfButton: document.getElementById("export-pdf-button"),
-  printButton: document.getElementById("print-button"),
-  autoScheduleButton: document.getElementById("auto-schedule-button"),
-  heroAutoButton: document.getElementById("hero-auto-button"),
-  groupPool: document.getElementById("group-pool"),
-  boardHead: document.getElementById("board-head"),
-  boardGrid: document.getElementById("board-grid"),
-  suggestionList: document.getElementById("suggestion-list"),
-  presenceList: document.getElementById("presence-list"),
-  lockList: document.getElementById("lock-list"),
-  activityList: document.getElementById("activity-list"),
-  validationList: document.getElementById("validation-list"),
-  settingsForm: document.getElementById("settings-form"),
-  saveSettingsButton: document.getElementById("save-settings-button"),
-  modal: document.getElementById("modal"),
-  modalCaption: document.getElementById("modal-caption"),
-  modalTitle: document.getElementById("modal-title"),
-  modalCloseButton: document.getElementById("modal-close-button"),
-  modalForm: document.getElementById("modal-form"),
-  toastStack: document.getElementById("toast-stack"),
-};
+const dom = getDom();
 
-configureApi({
+configureApiClient({
   getAccessToken: () => getCurrentIdToken(false),
   onUnauthorized: handleUnauthorized,
 });
 
 function resolveScreenFromHash() {
-  const raw = window.location.hash.replace(/^#\/?/, "").trim();
-  return SCREEN_IDS.has(raw) ? raw : DEFAULT_SCREEN;
+  return router.resolve(window.location.hash);
 }
 
 function setScreen(screen) {
-  const nextScreen = SCREEN_IDS.has(screen) ? screen : DEFAULT_SCREEN;
+  const nextScreen = router.resolve(router.build(screen));
   state.screen = nextScreen;
-  const nextHash = `#/${nextScreen}`;
-  if (window.location.hash !== nextHash) {
-    window.location.hash = nextHash;
+  if (!router.navigate(nextScreen, window)) {
     return;
   }
   render();
@@ -238,15 +128,6 @@ function hydrateUserProfile(user) {
   dom.displayNameInput.value = state.userProfile.displayName;
 }
 
-function getInitials(value) {
-  const source = String(value || "TT").trim();
-  if (!source) {
-    return "TT";
-  }
-  const parts = source.split(/\s+/).filter(Boolean).slice(0, 2);
-  return parts.map((part) => part[0]).join("").toUpperCase();
-}
-
 function setAuthError(message = "") {
   state.auth.error = message;
   dom.authErrorMessage.textContent = message;
@@ -257,43 +138,8 @@ function clearAuthError() {
   setAuthError("");
 }
 
-function formatTimeLabel(value) {
-  return new Date(value).toLocaleTimeString("th-TH", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatSyncTime(value) {
-  if (!value) {
-    return "รอการซิงก์ครั้งแรก";
-  }
-  return `ซิงก์ล่าสุด ${formatTimeLabel(value)}`;
-}
-
-function humanizeProvider(provider) {
-  if (!provider) {
-    return "เข้าสู่ระบบแล้ว";
-  }
-  if (provider === "google.com") {
-    return "เข้าสู่ระบบด้วย Google";
-  }
-  if (provider === "password") {
-    return "เข้าสู่ระบบด้วยอีเมล";
-  }
-  return `เข้าสู่ระบบผ่าน ${provider}`;
-}
-
 function currentViewLabel() {
   return state.view === "teacher" ? "มุมมองครู" : "มุมมองห้องเรียน";
-}
-
-function showToast(message, tone = "success") {
-  const toast = document.createElement("div");
-  toast.className = `toast ${tone}`;
-  toast.textContent = message;
-  dom.toastStack.appendChild(toast);
-  window.setTimeout(() => toast.remove(), 3200);
 }
 
 function isBusy(key) {
@@ -318,7 +164,7 @@ async function runAction(key, action, options = {}) {
   try {
     const result = await action();
     if (options.successMessage) {
-      showToast(options.successMessage);
+      showToast(dom.toastStack, options.successMessage);
     }
     return result;
   } catch (error) {
@@ -326,7 +172,7 @@ async function runAction(key, action, options = {}) {
     if (typeof options.onError === "function") {
       options.onError(error);
     }
-    showToast(options.errorMessage || error.message || "เกิดข้อผิดพลาดบางอย่าง", "error");
+    showToast(dom.toastStack, options.errorMessage || error.message || "เกิดข้อผิดพลาดบางอย่าง", "error");
     return null;
   } finally {
     toggleBusy(key, false);
@@ -387,7 +233,7 @@ function handleUnauthorized() {
     return;
   }
   unauthorizedHandled = true;
-  showToast("เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง", "error");
+  showToast(dom.toastStack, "เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง", "error");
   signOutUser()
     .catch(() => undefined)
     .finally(() => {
@@ -869,18 +715,21 @@ function render() {
 
   if (state.auth.status === "loading") {
     dom.bootStatus.textContent = state.auth.error || "กำลังตรวจสอบสิทธิ์การเข้าใช้และโหลดข้อมูลล่าสุดของสถานศึกษา";
+    appStore.emit();
     return;
   }
 
   if (state.auth.status === "signed_out") {
     renderAuthState();
     renderBusyState();
+    appStore.emit();
     return;
   }
 
   renderWorkspaceHeader();
   renderWorkspaceData();
   renderBusyState();
+  appStore.emit();
 }
 
 async function loadData(options = {}) {
@@ -1474,7 +1323,7 @@ function bindEvents() {
         await applySettingsAsset(target);
       } catch (error) {
         console.error(error);
-        showToast(error.message || "ไม่สามารถอัปโหลดรูปภาพได้", "error");
+        showToast(dom.toastStack, error.message || "ไม่สามารถอัปโหลดรูปภาพได้", "error");
       }
       return;
     }
@@ -1813,14 +1662,22 @@ async function init() {
   }
 }
 
-window.addEventListener("beforeunload", () => {
-  stopHeartbeat();
-  authUnsubscribe();
-});
+async function createTeachTableApp() {
+  window.addEventListener("beforeunload", () => {
+    stopHeartbeat();
+    authUnsubscribe();
+  });
 
-init().catch((error) => {
-  console.error(error);
-  state.auth.status = "signed_out";
-  setAuthError(error.message || "TeachTable ไม่สามารถเริ่มต้นระบบได้");
-  render();
-});
+  try {
+    await init();
+  } catch (error) {
+    console.error(error);
+    state.auth.status = "signed_out";
+    setAuthError(error.message || "TeachTable ไม่สามารถเริ่มต้นระบบได้");
+    render();
+  }
+}
+
+export {
+  createTeachTableApp,
+};

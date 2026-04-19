@@ -1,0 +1,65 @@
+.ui-surface {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.ui-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.ui-pill {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.ui-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.loading-skeleton {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.loading-skeleton-line {
+  display: block;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(24, 116, 152, 0.08), rgba(24, 116, 152, 0.16), rgba(24, 116, 152, 0.08));
+  background-size: 200% 100%;
+  animation: skeleton-shift 1.3s ease infinite;
+}
+
+.loading-skeleton-line.line-1 {
+  width: 82%;
+}
+
+.loading-skeleton-line.line-2 {
+  width: 68%;
+}
+
+.loading-skeleton-line.line-3 {
+  width: 74%;
+}
+
+@keyframes skeleton-shift {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}

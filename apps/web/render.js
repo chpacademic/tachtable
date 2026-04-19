@@ -1,3 +1,8 @@
+import { buildTableEmptyRow } from "./app/components/common/data-table.js";
+import { buildEmptyState } from "./app/components/common/empty-state.js";
+import { buildCheckboxGroup, buildHelpText } from "./app/components/common/form-controls.js";
+import { escapeHtml } from "./app/components/common/html.js";
+
 const NAV_ITEMS = [
   { id: "dashboard", label: "ภาพรวม", hint: "สถานะระบบและความคืบหน้า" },
   { id: "catalog", label: "ข้อมูลหลัก", hint: "ครู ห้องเรียน วิชา และห้องเรียนประจำ" },
@@ -304,58 +309,8 @@ function iconMarkup(name) {
   return ICONS[name] ? `<span class="tt-icon" aria-hidden="true">${ICONS[name]}</span>` : "";
 }
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
 function buildButtonLabel(iconName, label) {
   return `${iconMarkup(iconName)}<span>${escapeHtml(label)}</span>`;
-}
-
-function buildHelpText(text) {
-  return `<small class="field-help">${escapeHtml(text)}</small>`;
-}
-
-function buildCheckboxGroup(name, items = [], selectedValues = [], options = {}) {
-  const {
-    valueKey = "value",
-    labelKey = "label",
-    descriptionKey = "description",
-    className = "",
-  } = options;
-  const selectedSet = new Set(selectedValues || []);
-
-  return `
-    <div class="checkbox-group ${className}">
-      ${items
-        .map((item, index) => {
-          const value = String(item[valueKey] ?? "");
-          const label = item[labelKey] ?? value;
-          const description = item[descriptionKey] ?? "";
-          const inputId = `${name}-${index}-${value.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-          return `
-            <label class="check-tile" for="${escapeHtml(inputId)}">
-              <input
-                id="${escapeHtml(inputId)}"
-                type="checkbox"
-                name="${escapeHtml(name)}"
-                value="${escapeHtml(value)}"
-                ${selectedSet.has(value) ? "checked" : ""}
-              />
-              <span class="check-tile-copy">
-                <strong>${escapeHtml(label)}</strong>
-                ${description ? `<small>${escapeHtml(description)}</small>` : ""}
-              </span>
-            </label>
-          `;
-        })
-        .join("")}
-    </div>
-  `;
 }
 
 function buildImagePreview(src, alt, emptyText) {
@@ -468,19 +423,6 @@ function optionTags(items, selectedValue, valueKey = "id", labelKey = "name", al
     );
   }
   return options.join("");
-}
-
-function buildEmptyState(title, body, tone = "neutral") {
-  return `
-    <article class="empty-state ${tone} tt-soft-panel">
-      <strong class="tt-section-title">${escapeHtml(title)}</strong>
-      <p class="tt-body-soft">${escapeHtml(body)}</p>
-    </article>
-  `;
-}
-
-function buildTableEmptyRow(columnCount, message) {
-  return `<tr><td colspan="${columnCount}" class="table-empty">${escapeHtml(message)}</td></tr>`;
 }
 
 function renderWorkspaceState(root, options = {}) {

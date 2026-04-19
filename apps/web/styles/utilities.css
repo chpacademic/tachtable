@@ -1,0 +1,35 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.flow-xs {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.flow-sm {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.flow-md {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.content-width {
+  width: min(100%, var(--page-max-width));
+  margin-inline: auto;
+}

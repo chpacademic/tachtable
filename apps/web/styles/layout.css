@@ -1,0 +1,26 @@
+.page-shell {
+  width: min(100%, var(--page-max-width));
+  margin: 0 auto;
+}
+
+.page-header-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.workspace-split {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.content-stack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.sidebar-user-slot {
+  margin-top: auto;
+}
